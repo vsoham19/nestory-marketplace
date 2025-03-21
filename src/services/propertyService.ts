@@ -38,7 +38,20 @@ export const addProperty = (property: Omit<Property, 'id' | 'createdAt' | 'userI
 export const filterProperties = (properties: Property[], filters: Record<string, any>): Property[] => {
   return properties.filter(property => {
     for (const key in filters) {
-      if (filters[key] && property[key as keyof Property] !== filters[key]) {
+      // Special case for location which can match city, address, or zip code
+      if (key === 'location' && filters[key]) {
+        const searchTerm = filters[key].toLowerCase();
+        const cityMatch = property.city.toLowerCase().includes(searchTerm);
+        const addressMatch = property.address.toLowerCase().includes(searchTerm);
+        const zipMatch = property.zipCode.toLowerCase().includes(searchTerm);
+        const stateMatch = property.state.toLowerCase().includes(searchTerm);
+        
+        if (!(cityMatch || addressMatch || zipMatch || stateMatch)) {
+          return false;
+        }
+      } 
+      // For other filters, do exact match
+      else if (filters[key] && property[key as keyof Property] !== filters[key]) {
         return false;
       }
     }
