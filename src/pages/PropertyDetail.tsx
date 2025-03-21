@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, MapPin, Bed, Bath, Maximize, Calendar, Heart, Share, Phone, Mail } from 'lucide-react';
@@ -10,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -22,8 +22,6 @@ const PropertyDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   
   useEffect(() => {
-    // In a real app, this would be an API call
-    // For now, we'll use the mock data
     setTimeout(() => {
       const foundProperty = MOCK_PROPERTIES.find((p) => p.id === id);
       setProperty(foundProperty || null);
@@ -31,7 +29,7 @@ const PropertyDetail = () => {
         setSelectedImage(foundProperty.images[0]);
       }
       setIsLoading(false);
-    }, 500); // Simulate API call delay
+    }, 500);
   }, [id]);
   
   const handleImageClick = (image: string) => {
