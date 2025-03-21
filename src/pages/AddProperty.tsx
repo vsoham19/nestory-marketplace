@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ImagePlus, ChevronRight, AlertCircle } from 'lucide-react';
+import { ImagePlus, ChevronRight, AlertCircle, X, Upload } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,8 @@ const AddProperty = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('basics');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +68,45 @@ const AddProperty = () => {
     publish: 'Review & Publish'
   };
   
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    // Convert File objects to URLs for preview
+    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+    setUploadedImages(prev => [...prev, ...newImages]);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    toast({
+      title: "Images Uploaded",
+      description: `${files.length} image${files.length > 1 ? 's' : ''} uploaded successfully.`,
+    });
+  };
+  
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const indianCities = [
+    { state: 'Maharashtra', cities: ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik'] },
+    { state: 'Delhi NCR', cities: ['New Delhi', 'Gurugram', 'Noida', 'Ghaziabad', 'Faridabad'] },
+    { state: 'Karnataka', cities: ['Bengaluru', 'Mysuru', 'Hubli', 'Mangaluru', 'Belagavi'] },
+    { state: 'Tamil Nadu', cities: ['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem'] },
+    { state: 'Telangana', cities: ['Hyderabad', 'Warangal', 'Karimnagar', 'Nizamabad'] },
+    { state: 'Gujarat', cities: ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Gandhinagar'] },
+    { state: 'West Bengal', cities: ['Kolkata', 'Siliguri', 'Durgapur', 'Asansol', 'Howrah'] },
+  ];
+  
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -75,7 +116,7 @@ const AddProperty = () => {
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">List Your Property</h1>
             <p className="text-muted-foreground">
-              Fill out the form below to list your property on our platform
+              Fill out the form below to list your property on Estate Finder India
             </p>
           </div>
           
@@ -115,7 +156,7 @@ const AddProperty = () => {
                               <SelectItem value="house">House</SelectItem>
                               <SelectItem value="apartment">Apartment</SelectItem>
                               <SelectItem value="condo">Condo</SelectItem>
-                              <SelectItem value="townhouse">Townhouse</SelectItem>
+                              <SelectItem value="villa">Villa</SelectItem>
                               <SelectItem value="land">Land</SelectItem>
                               <SelectItem value="commercial">Commercial</SelectItem>
                             </SelectContent>
@@ -136,8 +177,8 @@ const AddProperty = () => {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="price">Price</Label>
-                          <Input id="price" type="number" placeholder="Enter price" min="0" required />
+                          <Label htmlFor="price">Price (₹)</Label>
+                          <Input id="price" type="number" placeholder="Enter price in INR" min="0" required />
                         </div>
                       </div>
                       
@@ -189,18 +230,42 @@ const AddProperty = () => {
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="city">City</Label>
-                            <Input id="city" placeholder="Enter city" required />
-                          </div>
-                          
-                          <div className="space-y-2">
                             <Label htmlFor="state">State</Label>
-                            <Input id="state" placeholder="Enter state" required />
+                            <Select required>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select state" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {indianCities.map(state => (
+                                  <SelectItem key={state.state} value={state.state}>
+                                    {state.state}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="zipCode">Zip Code</Label>
-                            <Input id="zipCode" placeholder="Enter zip code" required />
+                            <Label htmlFor="city">City</Label>
+                            <Select required>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select city" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {indianCities.flatMap(state => 
+                                  state.cities.map(city => (
+                                    <SelectItem key={city} value={city}>
+                                      {city}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="zipCode">Pin Code</Label>
+                            <Input id="zipCode" placeholder="Enter pin code" required />
                           </div>
                         </div>
                       </div>
@@ -215,9 +280,10 @@ const AddProperty = () => {
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {[
-                            'Air Conditioning', 'Swimming Pool', 'Garden', 'Garage',
-                            'Fireplace', 'Balcony', 'Gym', 'Security System',
-                            'Laundry Room', 'Furnished', 'Pet Friendly', 'Wi-Fi'
+                            'Air Conditioning', 'Swimming Pool', 'Garden', 'Parking',
+                            'Power Backup', 'Lift', 'Gym', 'Security System',
+                            'Servant Room', 'Furnished', 'Pet Friendly', 'Wi-Fi',
+                            'Rainwater Harvesting', 'Club House', 'Gated Community', 'Vaastu Compliant'
                           ].map((feature) => (
                             <div key={feature} className="flex items-center space-x-2">
                               <input type="checkbox" id={`feature-${feature}`} className="rounded text-primary focus:ring-primary" />
@@ -244,22 +310,65 @@ const AddProperty = () => {
                           Upload high-quality images of your property (minimum 3 images)
                         </p>
                         
+                        <input 
+                          type="file" 
+                          ref={fileInputRef}
+                          accept="image/*" 
+                          multiple 
+                          className="hidden" 
+                          onChange={handleImageUpload}
+                        />
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {[...Array(6)].map((_, index) => (
+                          {uploadedImages.map((image, index) => (
                             <div
                               key={index}
+                              className="relative border border-border rounded-lg aspect-[4/3] group overflow-hidden"
+                            >
+                              <img 
+                                src={image} 
+                                alt={`Property Image ${index + 1}`} 
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button 
+                                  variant="destructive" 
+                                  size="icon"
+                                  onClick={() => removeImage(index)}
+                                >
+                                  <X size={18} />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {uploadedImages.length < 8 && (
+                            <div
+                              onClick={triggerFileInput}
                               className="border-2 border-dashed border-border rounded-lg aspect-[4/3] flex flex-col items-center justify-center p-4 hover:border-primary/50 transition-colors cursor-pointer"
                             >
-                              <ImagePlus size={36} className="text-muted-foreground mb-2" />
+                              <Upload size={36} className="text-muted-foreground mb-2" />
                               <p className="text-sm font-medium">Upload Image</p>
                               <p className="text-xs text-muted-foreground">JPG, PNG or WEBP, max 5MB</p>
                             </div>
-                          ))}
+                          )}
                         </div>
+                        
+                        {uploadedImages.length > 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            {uploadedImages.length} image{uploadedImages.length !== 1 ? 's' : ''} uploaded. 
+                            {uploadedImages.length < 3 ? ' (Minimum 3 required)' : ''}
+                          </p>
+                        )}
                       </div>
                       
                       <div className="flex justify-end">
-                        <Button type="button" onClick={moveToNextTab} className="gap-1">
+                        <Button 
+                          type="button" 
+                          onClick={moveToNextTab} 
+                          className="gap-1"
+                          disabled={uploadedImages.length < 3}
+                        >
                           Continue to Publish
                           <ChevronRight size={16} />
                         </Button>

@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, MapPin, Bed, Bath, Maximize, Calendar, Heart, Share, Phone, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
+import PaymentModal from '@/components/PaymentModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -79,9 +80,9 @@ const PropertyDetail = () => {
   }
   
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0,
     }).format(price);
   };
@@ -289,47 +290,44 @@ const PropertyDetail = () => {
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>RS</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">John Doe</h4>
+                    <h4 className="font-medium">Raj Sharma</h4>
                     <p className="text-sm text-muted-foreground">Premium Agent</p>
                   </div>
                 </div>
                 
                 <Separator className="mb-4" />
                 
-                <div className="space-y-3 mb-6">
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Phone size={16} />
-                    (123) 456-7890
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Mail size={16} />
-                    agent@example.com
-                  </Button>
+                <div className="space-y-4 mb-6">
+                  <PaymentModal propertyTitle={property.title} />
+                  
+                  <p className="text-sm text-center text-muted-foreground">
+                    Pay ₹3,000 once to get direct contact with the seller
+                  </p>
                 </div>
                 
                 <form className="space-y-4">
                   <div>
-                    <input 
+                    <Input 
                       type="text" 
                       placeholder="Your Name" 
-                      className="w-full px-4 py-2 rounded-md border border-border bg-background"
+                      className="w-full"
                     />
                   </div>
                   <div>
-                    <input 
+                    <Input 
                       type="email" 
                       placeholder="Your Email" 
-                      className="w-full px-4 py-2 rounded-md border border-border bg-background"
+                      className="w-full"
                     />
                   </div>
                   <div>
-                    <input 
+                    <Input 
                       type="tel" 
                       placeholder="Your Phone" 
-                      className="w-full px-4 py-2 rounded-md border border-border bg-background"
+                      className="w-full"
                     />
                   </div>
                   <div>
@@ -339,7 +337,7 @@ const PropertyDetail = () => {
                       className="w-full px-4 py-2 rounded-md border border-border bg-background resize-none"
                     />
                   </div>
-                  <Button className="w-full">Contact Agent</Button>
+                  <Button className="w-full">Send Message</Button>
                 </form>
               </div>
             </div>
