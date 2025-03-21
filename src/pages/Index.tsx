@@ -204,10 +204,10 @@ const Index = () => {
             <div>
               <h3 className="font-semibold text-lg mb-4">Contact Us</h3>
               <address className="not-italic text-muted-foreground space-y-2">
-                <p>123 Real Estate Ave</p>
-                <p>New York, NY 10001</p>
+                <p>123 Satellite Road</p>
+                <p>Ahmedabad, Gujarat 380015</p>
                 <p>Email: info@estatefinder.com</p>
-                <p>Phone: (123) 456-7890</p>
+                <p>Phone: +91 98765 43210</p>
               </address>
             </div>
           </div>
