@@ -19,7 +19,7 @@ const Hero = () => {
   };
   
   const featuredLocations = [
-    'New York', 'Los Angeles', 'Chicago', 'Miami', 'Seattle'
+    'Mumbai', 'Ahmedabad', 'Delhi', 'Surat', 'Bangalore'
   ];
 
   return (

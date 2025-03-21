@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import AddProperty from "./pages/AddProperty";
+import NewProperty from "./pages/NewProperty";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/add-property" element={<AddProperty />} />
+            <Route path="/new-property" element={<NewProperty />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AnimatePresence>

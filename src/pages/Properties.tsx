@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,8 +5,8 @@ import SearchFilters from '@/components/SearchFilters';
 import PropertyCard from '@/components/PropertyCard';
 import { PropertyFilter, Property } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { motion } from 'framer-motion';
+import { getAllProperties } from '@/services/propertyService';
 
 const Properties = () => {
   const [searchParams] = useSearchParams();
@@ -42,10 +41,9 @@ const Properties = () => {
   useEffect(() => {
     setIsLoading(true);
     
-    // In a real app, this would be an API call with the filters
-    // For now, we'll filter the mock data on the client side
+    // Get all properties including newly added ones
     setTimeout(() => {
-      let results = [...MOCK_PROPERTIES];
+      let results = getAllProperties();
       
       if (activeFilters.location) {
         const locationLower = activeFilters.location.toLowerCase();
