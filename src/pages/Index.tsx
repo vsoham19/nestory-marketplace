@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import FeaturedProperties from '@/components/FeaturedProperties';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 const Index = () => {
   const categories = [
@@ -89,18 +89,18 @@ const Index = () => {
               {
                 step: '01',
                 title: 'Browse Properties',
-                description: 'Explore our extensive collection of properties across various locations and find the perfect match for your needs.',
+                description: 'Explore our extensive collection of properties across various locations and find the perfect match for your needs.'
               },
               {
                 step: '02',
                 title: 'Connect with Sellers',
-                description: 'Directly communicate with property owners or agents to get detailed information and schedule viewings.',
+                description: 'Directly communicate with property owners or agents to get detailed information and schedule viewings.'
               },
               {
                 step: '03',
                 title: 'Close the Deal',
-                description: 'Finalize your purchase or rental agreement with confidence, knowing you've found the perfect property.',
-              },
+                description: 'Finalize your purchase or rental agreement with confidence, knowing you\'ve found the perfect property.'
+              }
             ].map((item, index) => (
               <motion.div
                 key={item.step}
