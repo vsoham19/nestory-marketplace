@@ -93,7 +93,8 @@ const PropertyForm = () => {
       bathrooms,
       area,
       images: uploadedImages,
-      features
+      features,
+      published: true // Add this property to fix the TypeScript error
     };
     
     // Add the property (in a real app, this would make an API call)
