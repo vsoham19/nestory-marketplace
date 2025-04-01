@@ -1,5 +1,31 @@
+import { Property, Developer } from './types';
 
-import { Property } from './types';
+export const DEVELOPERS: Developer[] = [
+  {
+    id: 'dev1',
+    name: 'Raj Sharma',
+    title: 'Premium Agent',
+    email: 'raj.sharma@estatefinder.com',
+    phone: '+91 98765 43210',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200'
+  },
+  {
+    id: 'dev2',
+    name: 'Priya Patel',
+    title: 'Senior Property Consultant',
+    email: 'priya.patel@estatefinder.com',
+    phone: '+91 87654 32109',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200'
+  },
+  {
+    id: 'dev3',
+    name: 'Vikram Singh',
+    title: 'Luxury Properties Specialist',
+    email: 'vikram.singh@estatefinder.com',
+    phone: '+91 76543 21098',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200'
+  }
+];
 
 export const MOCK_PROPERTIES: Property[] = [
   {
@@ -26,6 +52,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-05-15'),
     userId: 'user1',
+    developer: DEVELOPERS[0] // Raj Sharma
   },
   {
     id: '2',
@@ -51,6 +78,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-06-20'),
     userId: 'user2',
+    developer: DEVELOPERS[1] // Priya Patel
   },
   {
     id: '3',
@@ -76,6 +104,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-07-10'),
     userId: 'user3',
+    developer: DEVELOPERS[2] // Vikram Singh
   },
   {
     id: '4',
@@ -101,6 +130,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-08-05'),
     userId: 'user4',
+    developer: DEVELOPERS[0] // Raj Sharma
   },
   {
     id: '5',
@@ -126,6 +156,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-09-12'),
     userId: 'user5',
+    developer: DEVELOPERS[1] // Priya Patel
   },
   {
     id: '6',
@@ -151,6 +182,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-10-18'),
     userId: 'user6',
+    developer: DEVELOPERS[2] // Vikram Singh
   },
   {
     id: '7',
@@ -176,6 +208,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-11-05'),
     userId: 'user7',
+    developer: DEVELOPERS[0] // Raj Sharma
   },
   {
     id: '8',
@@ -201,6 +234,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-11-20'),
     userId: 'user8',
+    developer: DEVELOPERS[1] // Priya Patel
   },
   {
     id: '9',
@@ -226,6 +260,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-12-01'),
     userId: 'user9',
+    developer: DEVELOPERS[2] // Vikram Singh
   },
   {
     id: '10',
@@ -251,6 +286,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2023-12-15'),
     userId: 'user10',
+    developer: DEVELOPERS[0] // Raj Sharma
   },
   {
     id: '11',
@@ -276,6 +312,7 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2024-01-05'),
     userId: 'user11',
+    developer: DEVELOPERS[1] // Priya Patel
   },
   {
     id: '12',
@@ -301,5 +338,6 @@ export const MOCK_PROPERTIES: Property[] = [
     ],
     createdAt: new Date('2024-01-15'),
     userId: 'user12',
-  },
+    developer: DEVELOPERS[2] // Vikram Singh
+  }
 ];

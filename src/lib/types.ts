@@ -17,6 +17,16 @@ export interface Property {
   features: string[];
   createdAt: Date;
   userId: string;
+  developer?: Developer; // Optional developer/agent information
+}
+
+export interface Developer {
+  id: string;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  avatar: string;
 }
 
 export interface PropertyFilter {

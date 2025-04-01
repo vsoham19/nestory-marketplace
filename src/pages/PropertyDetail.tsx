@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { MOCK_PROPERTIES } from '@/lib/mock-data';
+import { MOCK_PROPERTIES, DEVELOPERS } from '@/lib/mock-data';
 import { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -91,6 +91,8 @@ const PropertyDetail = () => {
     'sold': 'bg-red-100 text-red-800',
     'rented': 'bg-yellow-100 text-yellow-800'
   };
+
+  const developer = property.developer || DEVELOPERS[0];
 
   return (
     <div className="min-h-screen">
@@ -287,18 +289,27 @@ const PropertyDetail = () => {
                 <h3 className="text-lg font-semibold mb-4">Contact Agent</h3>
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200" />
-                    <AvatarFallback>RS</AvatarFallback>
+                    <AvatarImage src={developer.avatar} alt={developer.name} />
+                    <AvatarFallback>{developer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">Raj Sharma</h4>
-                    <p className="text-sm text-muted-foreground">Premium Agent</p>
+                    <h4 className="font-medium">{developer.name}</h4>
+                    <p className="text-sm text-muted-foreground">{developer.title}</p>
                   </div>
                 </div>
                 
                 <Separator className="mb-4" />
                 
                 <div className="space-y-4 mb-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone size={16} className="text-muted-foreground" />
+                    <span>{developer.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail size={16} className="text-muted-foreground" />
+                    <span>{developer.email}</span>
+                  </div>
+                  
                   <PaymentModal propertyTitle={property.title} />
                   
                   <p className="text-sm text-center text-muted-foreground">
