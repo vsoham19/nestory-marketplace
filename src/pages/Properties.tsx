@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,7 +7,7 @@ import PropertyCard from '@/components/PropertyCard';
 import { PropertyFilter, Property } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { motion } from 'framer-motion';
-import { getAllProperties } from '@/services/propertyService';
+import { getAllProperties, filterProperties } from '@/services/propertyService';
 
 const Properties = () => {
   const [searchParams] = useSearchParams();
@@ -41,8 +42,9 @@ const Properties = () => {
   useEffect(() => {
     setIsLoading(true);
     
-    // Get all properties including newly added ones
+    // Get all published properties including newly added ones
     setTimeout(() => {
+      // Get all properties including newly added ones
       let results = getAllProperties();
       
       if (activeFilters.location) {

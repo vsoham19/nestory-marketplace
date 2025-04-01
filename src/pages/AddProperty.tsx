@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -27,6 +26,8 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
+import { addProperty } from '@/services/propertyService';
+import { Property } from '@/lib/types';
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -35,20 +36,70 @@ const AddProperty = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState<number>(0);
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [type, setType] = useState<Property['type']>('apartment');
+  const [status, setStatus] = useState<Property['status']>('for-sale');
+  const [bedrooms, setBedrooms] = useState<number>(0);
+  const [bathrooms, setBathrooms] = useState<number>(0);
+  const [area, setArea] = useState<number>(0);
+  const [features, setFeatures] = useState<string[]>([]);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
+    if (!title || !description || !price || !address || !city || !state || !zipCode || uploadedImages.length < 3) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required fields and upload at least 3 images",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    const developer = {
+      id: 'dev-1',
+      name: contactName,
+      title: 'Property Agent',
+      email: contactEmail,
+      phone: contactPhone,
+      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+    };
+    
+    const newProperty: Omit<Property, 'id' | 'createdAt' | 'userId' | 'published'> = {
+      title,
+      description,
+      price,
+      address,
+      city,
+      state,
+      zipCode,
+      type,
+      status,
+      bedrooms,
+      bathrooms,
+      area,
+      images: uploadedImages,
+      features,
+      developer
+    };
+    
+    const addedProperty = addProperty(newProperty);
+    
     setTimeout(() => {
       setIsSubmitting(false);
-      toast({
-        title: "Property Submitted",
-        description: "Your property has been submitted for review.",
-        duration: 5000,
-      });
       navigate('/properties');
-    }, 1500);
+    }, 1000);
   };
   
   const handleTabChange = (value: string) => {
@@ -72,11 +123,9 @@ const AddProperty = () => {
     const files = e.target.files;
     if (!files) return;
     
-    // Convert File objects to URLs for preview
     const newImages = Array.from(files).map(file => URL.createObjectURL(file));
     setUploadedImages(prev => [...prev, ...newImages]);
     
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -143,12 +192,18 @@ const AddProperty = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label htmlFor="title">Property Title</Label>
-                          <Input id="title" placeholder="Enter property title" required />
+                          <Input 
+                            id="title" 
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Enter property title" 
+                            required 
+                          />
                         </div>
                         
                         <div className="space-y-2">
                           <Label htmlFor="type">Property Type</Label>
-                          <Select required>
+                          <Select value={type} onValueChange={(value) => setType(value as Property['type'])} required>
                             <SelectTrigger>
                               <SelectValue placeholder="Select property type" />
                             </SelectTrigger>
@@ -156,7 +211,7 @@ const AddProperty = () => {
                               <SelectItem value="house">House</SelectItem>
                               <SelectItem value="apartment">Apartment</SelectItem>
                               <SelectItem value="condo">Condo</SelectItem>
-                              <SelectItem value="villa">Villa</SelectItem>
+                              <SelectItem value="townhouse">Townhouse</SelectItem>
                               <SelectItem value="land">Land</SelectItem>
                               <SelectItem value="commercial">Commercial</SelectItem>
                             </SelectContent>
@@ -165,7 +220,7 @@ const AddProperty = () => {
                         
                         <div className="space-y-2">
                           <Label htmlFor="status">Listing Status</Label>
-                          <Select required>
+                          <Select value={status} onValueChange={(value) => setStatus(value as Property['status'])} required>
                             <SelectTrigger>
                               <SelectValue placeholder="Select listing status" />
                             </SelectTrigger>
@@ -178,7 +233,15 @@ const AddProperty = () => {
                         
                         <div className="space-y-2">
                           <Label htmlFor="price">Price (₹)</Label>
-                          <Input id="price" type="number" placeholder="Enter price in INR" min="0" required />
+                          <Input 
+                            id="price" 
+                            type="number" 
+                            value={price || ''}
+                            onChange={(e) => setPrice(Number(e.target.value))}
+                            placeholder="Enter price in INR" 
+                            min="0" 
+                            required 
+                          />
                         </div>
                       </div>
                       
@@ -186,6 +249,8 @@ const AddProperty = () => {
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                           id="description"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
                           placeholder="Enter detailed description of your property"
                           rows={5}
                           required
@@ -204,17 +269,42 @@ const AddProperty = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
                           <Label htmlFor="bedrooms">Bedrooms</Label>
-                          <Input id="bedrooms" type="number" placeholder="Number of bedrooms" min="0" required />
+                          <Input 
+                            id="bedrooms" 
+                            type="number" 
+                            value={bedrooms || ''}
+                            onChange={(e) => setBedrooms(Number(e.target.value))}
+                            placeholder="Number of bedrooms" 
+                            min="0" 
+                            required 
+                          />
                         </div>
                         
                         <div className="space-y-2">
                           <Label htmlFor="bathrooms">Bathrooms</Label>
-                          <Input id="bathrooms" type="number" placeholder="Number of bathrooms" min="0" step="0.5" required />
+                          <Input 
+                            id="bathrooms" 
+                            type="number" 
+                            value={bathrooms || ''} 
+                            onChange={(e) => setBathrooms(Number(e.target.value))}
+                            placeholder="Number of bathrooms" 
+                            min="0" 
+                            step="0.5" 
+                            required 
+                          />
                         </div>
                         
                         <div className="space-y-2">
                           <Label htmlFor="area">Area (sq ft)</Label>
-                          <Input id="area" type="number" placeholder="Property area" min="0" required />
+                          <Input 
+                            id="area" 
+                            type="number" 
+                            value={area || ''}
+                            onChange={(e) => setArea(Number(e.target.value))}
+                            placeholder="Property area" 
+                            min="0" 
+                            required 
+                          />
                         </div>
                       </div>
                       
@@ -226,12 +316,18 @@ const AddProperty = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
                             <Label htmlFor="address">Street Address</Label>
-                            <Input id="address" placeholder="Enter street address" required />
+                            <Input 
+                              id="address" 
+                              value={address}
+                              onChange={(e) => setAddress(e.target.value)}
+                              placeholder="Enter street address" 
+                              required 
+                            />
                           </div>
                           
                           <div className="space-y-2">
                             <Label htmlFor="state">State</Label>
-                            <Select required>
+                            <Select value={state} onValueChange={setState} required>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select state" />
                               </SelectTrigger>
@@ -247,7 +343,7 @@ const AddProperty = () => {
                           
                           <div className="space-y-2">
                             <Label htmlFor="city">City</Label>
-                            <Select required>
+                            <Select value={city} onValueChange={setCity} required>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select city" />
                               </SelectTrigger>
@@ -265,7 +361,13 @@ const AddProperty = () => {
                           
                           <div className="space-y-2">
                             <Label htmlFor="zipCode">Pin Code</Label>
-                            <Input id="zipCode" placeholder="Enter pin code" required />
+                            <Input 
+                              id="zipCode" 
+                              value={zipCode}
+                              onChange={(e) => setZipCode(e.target.value)}
+                              placeholder="Enter pin code" 
+                              required 
+                            />
                           </div>
                         </div>
                       </div>
@@ -286,7 +388,19 @@ const AddProperty = () => {
                             'Rainwater Harvesting', 'Club House', 'Gated Community', 'Vaastu Compliant'
                           ].map((feature) => (
                             <div key={feature} className="flex items-center space-x-2">
-                              <input type="checkbox" id={`feature-${feature}`} className="rounded text-primary focus:ring-primary" />
+                              <input 
+                                type="checkbox" 
+                                id={`feature-${feature}`}
+                                checked={features.includes(feature)}
+                                onChange={() => {
+                                  if (features.includes(feature)) {
+                                    setFeatures(features.filter(f => f !== feature));
+                                  } else {
+                                    setFeatures([...features, feature]);
+                                  }
+                                }}
+                                className="rounded text-primary focus:ring-primary" 
+                              />
                               <Label htmlFor={`feature-${feature}`} className="text-sm font-normal cursor-pointer">
                                 {feature}
                               </Label>
@@ -382,7 +496,7 @@ const AddProperty = () => {
                           <h3 className="text-sm font-medium text-yellow-800 mb-1">Before you publish</h3>
                           <p className="text-sm text-yellow-700">
                             Please ensure all the information provided is accurate and complete. 
-                            Your listing will be reviewed before it appears on our platform.
+                            Your listing will be published immediately after submission.
                           </p>
                         </div>
                       </div>
@@ -393,17 +507,36 @@ const AddProperty = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
                             <Label htmlFor="contactName">Contact Name</Label>
-                            <Input id="contactName" placeholder="Your name" required />
+                            <Input 
+                              id="contactName" 
+                              value={contactName}
+                              onChange={(e) => setContactName(e.target.value)}
+                              placeholder="Your name" 
+                              required 
+                            />
                           </div>
                           
                           <div className="space-y-2">
                             <Label htmlFor="contactEmail">Contact Email</Label>
-                            <Input id="contactEmail" type="email" placeholder="Your email" required />
+                            <Input 
+                              id="contactEmail" 
+                              type="email" 
+                              value={contactEmail}
+                              onChange={(e) => setContactEmail(e.target.value)}
+                              placeholder="Your email" 
+                              required 
+                            />
                           </div>
                           
                           <div className="space-y-2">
                             <Label htmlFor="contactPhone">Contact Phone</Label>
-                            <Input id="contactPhone" placeholder="Your phone number" required />
+                            <Input 
+                              id="contactPhone" 
+                              value={contactPhone}
+                              onChange={(e) => setContactPhone(e.target.value)}
+                              placeholder="Your phone number" 
+                              required 
+                            />
                           </div>
                         </div>
                       </div>
@@ -417,7 +550,7 @@ const AddProperty = () => {
                       
                       <div className="flex justify-end">
                         <Button type="submit" disabled={isSubmitting} className="gap-1">
-                          {isSubmitting ? 'Submitting...' : 'Publish Property'}
+                          {isSubmitting ? 'Publishing...' : 'Publish Property'}
                         </Button>
                       </div>
                     </TabsContent>

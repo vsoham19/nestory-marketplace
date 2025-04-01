@@ -17,6 +17,7 @@ export interface Property {
   features: string[];
   createdAt: Date;
   userId: string;
+  published: boolean; // New property to track if a property is published
   developer?: Developer; // Optional developer/agent information
 }
 
