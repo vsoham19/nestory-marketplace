@@ -10,26 +10,48 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { MOCK_PROPERTIES, DEVELOPERS } from '@/lib/mock-data';
+import { DEVELOPERS } from '@/lib/mock-data';
 import { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getPropertyById, getAllProperties } from '@/services/propertyService';
 
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
+  const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   
   useEffect(() => {
-    setTimeout(() => {
-      const foundProperty = MOCK_PROPERTIES.find((p) => p.id === id);
-      setProperty(foundProperty || null);
-      if (foundProperty) {
-        setSelectedImage(foundProperty.images[0]);
+    const fetchProperty = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const foundProperty = await getPropertyById(id);
+        setProperty(foundProperty || null);
+        if (foundProperty) {
+          setSelectedImage(foundProperty.images[0]);
+          
+          // Fetch similar properties
+          const allProperties = await getAllProperties();
+          const similar = allProperties.filter(p => 
+            p.id !== foundProperty.id && 
+            p.type === foundProperty.type &&
+            p.status === foundProperty.status
+          ).slice(0, 2);
+          
+          setSimilarProperties(similar);
+        }
+      } catch (error) {
+        console.error('Error fetching property:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, 500);
+    };
+    
+    fetchProperty();
   }, [id]);
   
   const handleImageClick = (image: string) => {
@@ -244,11 +266,7 @@ const PropertyDetail = () => {
               
               <h3 className="text-xl font-semibold mb-4">Similar Properties</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MOCK_PROPERTIES.filter(p => 
-                  p.id !== property.id && 
-                  p.type === property.type &&
-                  p.status === property.status
-                ).slice(0, 2).map(similarProperty => (
+                {similarProperties.map(similarProperty => (
                   <div 
                     key={similarProperty.id}
                     className="flex gap-4 bg-card border border-border/50 rounded-lg p-3 hover:border-primary/50 transition-colors"

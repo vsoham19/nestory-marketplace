@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -42,49 +41,29 @@ const Properties = () => {
   useEffect(() => {
     setIsLoading(true);
     
-    // Get all published properties including newly added ones
-    setTimeout(() => {
-      // Get all properties including newly added ones
-      let results = getAllProperties();
-      
-      if (activeFilters.location) {
-        const locationLower = activeFilters.location.toLowerCase();
-        results = results.filter(
-          (property) =>
-            property.city.toLowerCase().includes(locationLower) ||
-            property.address.toLowerCase().includes(locationLower) ||
-            property.state.toLowerCase().includes(locationLower) ||
-            property.zipCode.toLowerCase().includes(locationLower)
-        );
+    // Get all published properties
+    const fetchProperties = async () => {
+      try {
+        let results: Property[] = [];
+        
+        if (Object.keys(activeFilters).some(key => activeFilters[key as keyof PropertyFilter] !== undefined)) {
+          // Use filterProperties if we have active filters
+          results = await filterProperties(activeFilters);
+        } else {
+          // Otherwise get all properties
+          results = await getAllProperties();
+        }
+        
+        setFilteredProperties(results);
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+        setFilteredProperties([]);
+      } finally {
+        setIsLoading(false);
       }
-      
-      if (activeFilters.minPrice) {
-        results = results.filter((property) => property.price >= (activeFilters.minPrice || 0));
-      }
-      
-      if (activeFilters.maxPrice) {
-        results = results.filter((property) => property.price <= (activeFilters.maxPrice || Infinity));
-      }
-      
-      if (activeFilters.bedrooms) {
-        results = results.filter((property) => property.bedrooms >= (activeFilters.bedrooms || 0));
-      }
-      
-      if (activeFilters.bathrooms) {
-        results = results.filter((property) => property.bathrooms >= (activeFilters.bathrooms || 0));
-      }
-      
-      if (activeFilters.type) {
-        results = results.filter((property) => property.type === activeFilters.type);
-      }
-      
-      if (activeFilters.status) {
-        results = results.filter((property) => property.status === activeFilters.status);
-      }
-      
-      setFilteredProperties(results);
-      setIsLoading(false);
-    }, 500); // Simulate API call delay
+    };
+    
+    fetchProperties();
   }, [activeFilters]);
   
   const handleFilterChange = (filters: PropertyFilter) => {

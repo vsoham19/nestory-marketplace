@@ -2,36 +2,162 @@
 import { Property } from '@/lib/types';
 import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 // In-memory storage for new properties
 let newProperties: Property[] = [];
 
-// Get all properties (mock + published new ones)
-export const getAllProperties = (): Property[] => {
-  // Return mock properties and only published new properties
-  return [...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
+// Get all properties (mock + published new ones + supabase ones)
+export const getAllProperties = async (): Promise<Property[]> => {
+  try {
+    // Try to fetch from Supabase first
+    const { data: supabaseProperties, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('published', true);
+      
+    if (error) {
+      console.error('Error fetching from Supabase:', error);
+      // Fall back to mock data if there's an error
+      return [...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
+    }
+    
+    if (supabaseProperties && supabaseProperties.length > 0) {
+      // Map the Supabase data to our Property type
+      const mappedProperties = supabaseProperties.map(prop => ({
+        id: prop.id,
+        title: prop.title,
+        description: prop.description,
+        price: prop.price,
+        address: prop.address,
+        city: prop.city,
+        state: prop.state,
+        zipCode: prop.zip_code,
+        type: prop.type,
+        status: prop.status,
+        bedrooms: prop.bedrooms,
+        bathrooms: prop.bathrooms,
+        area: prop.area,
+        images: prop.images,
+        features: prop.features,
+        createdAt: new Date(prop.created_at),
+        userId: prop.user_id,
+        published: prop.published
+      })) as Property[];
+      
+      return [...mappedProperties, ...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
+    }
+    
+    // Fall back to mock data if no results from Supabase
+    return [...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
+  } catch (error) {
+    console.error('Unexpected error fetching properties:', error);
+    // Fall back to mock data on any error
+    return [...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
+  }
 };
 
 // Get all properties including unpublished ones (for admin views)
-export const getAllPropertiesIncludingUnpublished = (): Property[] => {
-  return [...MOCK_PROPERTIES, ...newProperties];
+export const getAllPropertiesIncludingUnpublished = async (): Promise<Property[]> => {
+  try {
+    // Try to fetch from Supabase first
+    const { data: supabaseProperties, error } = await supabase
+      .from('properties')
+      .select('*');
+      
+    if (error) {
+      console.error('Error fetching from Supabase:', error);
+      return [...MOCK_PROPERTIES, ...newProperties];
+    }
+    
+    if (supabaseProperties && supabaseProperties.length > 0) {
+      // Map the Supabase data to our Property type
+      const mappedProperties = supabaseProperties.map(prop => ({
+        id: prop.id,
+        title: prop.title,
+        description: prop.description,
+        price: prop.price,
+        address: prop.address,
+        city: prop.city,
+        state: prop.state,
+        zipCode: prop.zip_code,
+        type: prop.type,
+        status: prop.status,
+        bedrooms: prop.bedrooms,
+        bathrooms: prop.bathrooms,
+        area: prop.area,
+        images: prop.images,
+        features: prop.features,
+        createdAt: new Date(prop.created_at),
+        userId: prop.user_id,
+        published: prop.published
+      })) as Property[];
+      
+      return [...mappedProperties, ...MOCK_PROPERTIES, ...newProperties];
+    }
+    
+    return [...MOCK_PROPERTIES, ...newProperties];
+  } catch (error) {
+    console.error('Unexpected error fetching properties:', error);
+    return [...MOCK_PROPERTIES, ...newProperties];
+  }
 };
 
 // Add a new property
-export const addProperty = (property: Omit<Property, 'id' | 'createdAt' | 'userId' | 'published'>): Property => {
+export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 'userId' | 'published'>): Promise<Property> => {
   // Create a new property with required fields
   const newProperty: Property = {
     ...property,
     id: `new-${Date.now()}`, // Generate a unique ID
     createdAt: new Date(),
     userId: 'current-user', // In a real app, this would be the logged-in user's ID
-    published: true // By default, properties are published immediately
+    published: true
   };
   
-  // Add the new property to our in-memory storage
+  try {
+    // First try to add to Supabase
+    const { data, error } = await supabase
+      .from('properties')
+      .insert({
+        id: newProperty.id,
+        title: newProperty.title,
+        description: newProperty.description,
+        price: newProperty.price,
+        address: newProperty.address,
+        city: newProperty.city,
+        state: newProperty.state,
+        zip_code: newProperty.zipCode,
+        type: newProperty.type,
+        status: newProperty.status,
+        bedrooms: newProperty.bedrooms,
+        bathrooms: newProperty.bathrooms,
+        area: newProperty.area,
+        images: newProperty.images,
+        features: newProperty.features,
+        created_at: newProperty.createdAt.toISOString(),
+        user_id: newProperty.userId,
+        published: newProperty.published
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error adding to Supabase:', error);
+      // Fall back to in-memory storage
+      newProperties = [newProperty, ...newProperties];
+    } else if (data) {
+      // Successfully added to Supabase
+      console.log('Property added to Supabase:', data);
+    }
+  } catch (error) {
+    console.error('Unexpected error adding property:', error);
+    // Fall back to in-memory storage
+    newProperties = [newProperty, ...newProperties];
+  }
+  
+  // Add the new property to our in-memory storage as a fallback
   newProperties = [newProperty, ...newProperties];
   
-  // In a real app, this would be an API call to save to database
   toast({
     title: "Property Added",
     description: "Your property has been successfully added and published!",
@@ -42,8 +168,56 @@ export const addProperty = (property: Omit<Property, 'id' | 'createdAt' | 'userI
 };
 
 // Update property published status
-export const updatePropertyPublishedStatus = (propertyId: string, published: boolean): Property | undefined => {
-  // Find the property in the new properties array
+export const updatePropertyPublishedStatus = async (propertyId: string, published: boolean): Promise<Property | undefined> => {
+  try {
+    // Try to update in Supabase first
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ published })
+      .eq('id', propertyId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating in Supabase:', error);
+    } else if (data) {
+      // Successfully updated in Supabase
+      const updatedProperty: Property = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zip_code,
+        type: data.type,
+        status: data.status,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        area: data.area,
+        images: data.images,
+        features: data.features,
+        createdAt: new Date(data.created_at),
+        userId: data.user_id,
+        published: data.published
+      };
+      
+      toast({
+        title: published ? "Property Published" : "Property Unpublished",
+        description: published 
+          ? "Your property is now visible to all users." 
+          : "Your property has been unpublished and is no longer visible to users.",
+        duration: 5000,
+      });
+      
+      return updatedProperty;
+    }
+  } catch (error) {
+    console.error('Unexpected error updating property:', error);
+  }
+  
+  // Fall back to in-memory update
   const propertyIndex = newProperties.findIndex(p => p.id === propertyId);
   
   if (propertyIndex !== -1) {
@@ -68,7 +242,44 @@ export const updatePropertyPublishedStatus = (propertyId: string, published: boo
 };
 
 // Get a single property by ID
-export const getPropertyById = (id: string): Property | undefined => {
+export const getPropertyById = async (id: string): Promise<Property | undefined> => {
+  try {
+    // Try to get from Supabase first
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching from Supabase:', error);
+    } else if (data) {
+      // Successfully retrieved from Supabase
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zip_code,
+        type: data.type,
+        status: data.status,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        area: data.area,
+        images: data.images,
+        features: data.features,
+        createdAt: new Date(data.created_at),
+        userId: data.user_id,
+        published: data.published
+      };
+    }
+  } catch (error) {
+    console.error('Unexpected error fetching property:', error);
+  }
+  
   // Check mock properties first
   const mockProperty = MOCK_PROPERTIES.find(property => property.id === id);
   if (mockProperty) return mockProperty;
@@ -78,7 +289,10 @@ export const getPropertyById = (id: string): Property | undefined => {
 };
 
 // Filter properties based on criteria
-export const filterProperties = (properties: Property[], filters: Record<string, any>): Property[] => {
+export const filterProperties = async (filters: Record<string, any>): Promise<Property[]> => {
+  // Get all properties
+  const properties = await getAllProperties();
+  
   return properties.filter(property => {
     for (const key in filters) {
       // Special case for location which can match city, address, or zip code

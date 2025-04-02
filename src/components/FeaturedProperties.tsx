@@ -1,19 +1,34 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Property } from '@/lib/types';
 import PropertyCard from './PropertyCard';
 import { Button } from '@/components/ui/button';
-import { MOCK_PROPERTIES } from '@/lib/mock-data';
+import { getAllProperties } from '@/services/propertyService';
 
 interface FeaturedPropertiesProps {
   limit?: number;
 }
 
 const FeaturedProperties = ({ limit = 6 }: FeaturedPropertiesProps) => {
-  // In a real application, you would fetch these from an API
-  const properties = MOCK_PROPERTIES.slice(0, limit);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const allProperties = await getAllProperties();
+        setProperties(allProperties.slice(0, limit));
+      } catch (error) {
+        console.error("Error fetching featured properties:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [limit]);
 
   return (
     <section className="py-16 bg-secondary/30">
@@ -31,15 +46,38 @@ const FeaturedProperties = ({ limit = 6 }: FeaturedPropertiesProps) => {
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property, index) => (
-            <PropertyCard 
-              key={property.id} 
-              property={property} 
-              featured={index === 0}  
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: limit }).map((_, index) => (
+              <div 
+                key={index}
+                className="bg-card border border-border/50 rounded-lg h-[400px] animate-pulse"
+              >
+                <div className="h-1/2 bg-muted rounded-t-lg" />
+                <div className="p-4 space-y-4">
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <div className="h-8 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-muted rounded w-16" />
+                    <div className="h-6 bg-muted rounded w-16" />
+                    <div className="h-6 bg-muted rounded w-16" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property, index) => (
+              <PropertyCard 
+                key={property.id} 
+                property={property} 
+                featured={index === 0}  
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
