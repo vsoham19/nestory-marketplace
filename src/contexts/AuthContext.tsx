@@ -93,7 +93,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        // Special handling for email_not_confirmed error
+        if (error.message === "Email not confirmed" || error.code === "email_not_confirmed") {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your email for a confirmation link. For development, you can disable email confirmation in the Supabase dashboard.",
+            duration: 6000,
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error signing in",

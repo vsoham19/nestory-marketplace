@@ -12,6 +12,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import AddProperty from "./pages/AddProperty";
 import NewProperty from "./pages/NewProperty";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/add-property" element={<AddProperty />} />
               <Route path="/new-property" element={<NewProperty />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>
