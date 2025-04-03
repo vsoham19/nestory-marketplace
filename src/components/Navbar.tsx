@@ -1,179 +1,158 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, PlusCircle, User, LogIn, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
+import { 
+  Home, 
+  Building2, 
+  PlusCircle, 
+  User, 
+  LogOut, 
+  Menu 
+} from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, isLoading, signOut } = useAuth();
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
+  const { toast } = useToast();
 
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrolled]);
-
-  const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Properties', path: '/properties', icon: Search },
-    { name: 'Add Property', path: '/add-property', icon: PlusCircle },
-  ];
-  
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully logged out.",
+        duration: 3000
+      });
+      
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        title: "Sign Out Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+        duration: 5000
+      });
+    }
   };
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user || !user.user_metadata?.name) return 'U';
-    const name = user.user_metadata.name as string;
-    const parts = name.split(' ');
-    if (parts.length > 1) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+  const toggleMobileMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
-    <header 
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out px-4 md:px-6 py-4',
-        scrolled ? 'bg-background/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
-      )}
-    >
-      <div className="container-custom flex items-center justify-between">
-        <Link 
-          to="/" 
-          className="flex items-center gap-2 font-semibold text-xl"
-        >
-          <span className="text-primary">Estate</span>
-          <span>Finder</span>
-          <span className="text-xs text-muted-foreground">India</span>
+    <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
+      <div className="container-custom flex justify-between items-center py-4">
+        {/* Logo */}
+        <Link to="/" className="text-2xl font-bold text-primary">
+          RealEstate
         </Link>
-        
-        <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                'px-4 py-2 rounded-md text-sm font-medium transition-all',
-                location.pathname === item.path
-                  ? 'text-primary bg-primary/5'
-                  : 'text-foreground/70 hover:text-foreground hover:bg-secondary'
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-        
-        <div className="flex items-center gap-3">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar>
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  {user.user_metadata?.name || 'Account'}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>My Profile</DropdownMenuItem>
-                <DropdownMenuItem>My Properties</DropdownMenuItem>
-                <DropdownMenuItem>Favorites</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="hidden md:flex gap-2 items-center"
-                onClick={() => navigate('/auth')}
-              >
-                <LogIn size={16} />
-                <span>Sign In</span>
-              </Button>
-              
-              <Button 
-                size="sm" 
-                className="hidden md:flex"
-                onClick={() => {
-                  navigate('/auth');
-                  setTimeout(() => {
-                    document.querySelector('button[value="signup"]')?.click();
-                  }, 100);
-                }}
-              >
-                Get Started
-              </Button>
-            </>
-          )}
-          
-          <div className="md:hidden flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  'p-2 rounded-md transition-all',
-                  location.pathname === item.path
-                    ? 'text-primary bg-primary/5'
-                    : 'text-foreground/70 hover:text-foreground'
-                )}
-              >
-                <item.icon size={20} />
-              </Link>
-            ))}
-            
-            {!user && (
-              <Link
-                to="/auth"
-                className="p-2 rounded-md transition-all text-foreground/70 hover:text-foreground"
-              >
-                <User size={20} />
-              </Link>
-            )}
-          </div>
+
+        {/* Mobile Menu Toggle */}
+        <div className="md:hidden">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMobileMenu}
+          >
+            <Menu />
+          </Button>
         </div>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-4">
+          <Link to="/" className="nav-link flex items-center gap-2">
+            <Home size={18} /> Home
+          </Link>
+          <Link to="/properties" className="nav-link flex items-center gap-2">
+            <Building2 size={18} /> Properties
+          </Link>
+          <Link to="/new-property" className="nav-link flex items-center gap-2">
+            <PlusCircle size={18} /> Add Property
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <User />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Mobile Navigation Overlay */}
+        {isMenuOpen && (
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={toggleMobileMenu}>
+            <div 
+              className="absolute top-0 right-0 w-64 h-full bg-white p-6 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col space-y-4">
+                <Link 
+                  to="/" 
+                  className="nav-link flex items-center gap-2"
+                  onClick={toggleMobileMenu}
+                >
+                  <Home size={18} /> Home
+                </Link>
+                <Link 
+                  to="/properties" 
+                  className="nav-link flex items-center gap-2"
+                  onClick={toggleMobileMenu}
+                >
+                  <Building2 size={18} /> Properties
+                </Link>
+                <Link 
+                  to="/new-property" 
+                  className="nav-link flex items-center gap-2"
+                  onClick={toggleMobileMenu}
+                >
+                  <PlusCircle size={18} /> Add Property
+                </Link>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    navigate('/profile');
+                    toggleMobileMenu();
+                  }}
+                  className="justify-start"
+                >
+                  <User className="mr-2" size={18} /> Profile
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    handleSignOut();
+                    toggleMobileMenu();
+                  }}
+                  className="justify-start"
+                >
+                  <LogOut className="mr-2" size={18} /> Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </header>
+    </nav>
   );
 };
 
