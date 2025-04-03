@@ -27,22 +27,22 @@ export const getAllProperties = async (): Promise<Property[]> => {
       const mappedProperties = supabaseProperties.map(prop => ({
         id: prop.id,
         title: prop.title,
-        description: prop.description,
+        description: prop.description || '',
         price: prop.price,
-        address: prop.address,
-        city: prop.city,
-        state: prop.state,
-        zipCode: prop.zip_code,
-        type: prop.type,
-        status: prop.status,
-        bedrooms: prop.bedrooms,
-        bathrooms: prop.bathrooms,
-        area: prop.area,
-        images: prop.images,
-        features: prop.features,
-        createdAt: new Date(prop.created_at),
-        userId: prop.user_id,
-        published: prop.published
+        address: prop.address || '',
+        city: prop.city || '',
+        state: prop.state || '',
+        zipCode: prop.zipcode || '',
+        type: 'house', // Default value since this doesn't exist in the DB yet
+        status: 'for-sale', // Default value since this doesn't exist in the DB yet
+        bedrooms: prop.bedrooms || 0,
+        bathrooms: prop.bathrooms || 0,
+        area: prop.area || 0,
+        images: prop.image_urls || [],
+        features: [], // Default value since this doesn't exist in the DB yet
+        createdAt: prop.created_at ? new Date(prop.created_at) : new Date(),
+        userId: prop.user_id || 'unknown',
+        published: prop.published === true
       })) as Property[];
       
       return [...mappedProperties, ...MOCK_PROPERTIES, ...newProperties.filter(property => property.published)];
@@ -75,22 +75,22 @@ export const getAllPropertiesIncludingUnpublished = async (): Promise<Property[]
       const mappedProperties = supabaseProperties.map(prop => ({
         id: prop.id,
         title: prop.title,
-        description: prop.description,
+        description: prop.description || '',
         price: prop.price,
-        address: prop.address,
-        city: prop.city,
-        state: prop.state,
-        zipCode: prop.zip_code,
-        type: prop.type,
-        status: prop.status,
-        bedrooms: prop.bedrooms,
-        bathrooms: prop.bathrooms,
-        area: prop.area,
-        images: prop.images,
-        features: prop.features,
-        createdAt: new Date(prop.created_at),
-        userId: prop.user_id,
-        published: prop.published
+        address: prop.address || '',
+        city: prop.city || '',
+        state: prop.state || '',
+        zipCode: prop.zipcode || '',
+        type: 'house', // Default value
+        status: 'for-sale', // Default value
+        bedrooms: prop.bedrooms || 0,
+        bathrooms: prop.bathrooms || 0,
+        area: prop.area || 0,
+        images: prop.image_urls || [],
+        features: [], // Default value
+        createdAt: prop.created_at ? new Date(prop.created_at) : new Date(),
+        userId: prop.user_id || 'unknown',
+        published: prop.published === true
       })) as Property[];
       
       return [...mappedProperties, ...MOCK_PROPERTIES, ...newProperties];
@@ -126,15 +126,11 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
         address: newProperty.address,
         city: newProperty.city,
         state: newProperty.state,
-        zip_code: newProperty.zipCode,
-        type: newProperty.type,
-        status: newProperty.status,
+        zipcode: newProperty.zipCode,
         bedrooms: newProperty.bedrooms,
         bathrooms: newProperty.bathrooms,
         area: newProperty.area,
-        images: newProperty.images,
-        features: newProperty.features,
-        created_at: newProperty.createdAt.toISOString(),
+        image_urls: newProperty.images,
         user_id: newProperty.userId,
         published: newProperty.published
       })
@@ -185,22 +181,22 @@ export const updatePropertyPublishedStatus = async (propertyId: string, publishe
       const updatedProperty: Property = {
         id: data.id,
         title: data.title,
-        description: data.description,
+        description: data.description || '',
         price: data.price,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zip_code,
-        type: data.type,
-        status: data.status,
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
-        area: data.area,
-        images: data.images,
-        features: data.features,
-        createdAt: new Date(data.created_at),
-        userId: data.user_id,
-        published: data.published
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        zipCode: data.zipcode || '',
+        type: 'house', // Default value
+        status: 'for-sale', // Default value
+        bedrooms: data.bedrooms || 0,
+        bathrooms: data.bathrooms || 0,
+        area: data.area || 0,
+        images: data.image_urls || [],
+        features: [], // Default value
+        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+        userId: data.user_id || 'unknown',
+        published: data.published === true
       };
       
       toast({
@@ -258,22 +254,22 @@ export const getPropertyById = async (id: string): Promise<Property | undefined>
       return {
         id: data.id,
         title: data.title,
-        description: data.description,
+        description: data.description || '',
         price: data.price,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zip_code,
-        type: data.type,
-        status: data.status,
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
-        area: data.area,
-        images: data.images,
-        features: data.features,
-        createdAt: new Date(data.created_at),
-        userId: data.user_id,
-        published: data.published
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        zipCode: data.zipcode || '',
+        type: 'house', // Default value
+        status: 'for-sale', // Default value
+        bedrooms: data.bedrooms || 0,
+        bathrooms: data.bathrooms || 0,
+        area: data.area || 0,
+        images: data.image_urls || [],
+        features: [], // Default value
+        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+        userId: data.user_id || 'unknown',
+        published: data.published === true
       };
     }
   } catch (error) {

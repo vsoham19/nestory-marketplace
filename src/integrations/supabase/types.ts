@@ -50,6 +50,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           price: number
+          published: boolean | null
           state: string | null
           title: string
           updated_at: string | null
@@ -67,6 +68,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           price: number
+          published?: boolean | null
           state?: string | null
           title: string
           updated_at?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           price?: number
+          published?: boolean | null
           state?: string | null
           title?: string
           updated_at?: string | null
