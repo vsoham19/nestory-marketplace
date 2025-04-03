@@ -7,34 +7,72 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PaymentModalProps {
   propertyTitle: string;
+  propertyId: string;
 }
 
-const PaymentModal = ({ propertyTitle }: PaymentModalProps) => {
+const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const { user } = useAuth();
   
-  const handlePayment = (e: React.FormEvent) => {
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to make a payment",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
+    try {
+      // Store payment record in Supabase
+      const { data, error } = await supabase
+        .from('payments')
+        .insert({
+          user_id: user.id,
+          property_id: propertyId,
+          amount: 3000,
+          status: 'completed'
+        })
+        .select();
+      
+      if (error) throw error;
+      
       setIsLoading(false);
       setShowContact(true);
+      
       toast({
         title: "Payment Successful",
         description: "You now have access to the seller's contact details",
       });
-    }, 1500);
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Unable to process payment. Please try again.",
+        variant: "destructive",
+      });
+      
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -98,7 +136,9 @@ const PaymentModal = ({ propertyTitle }: PaymentModalProps) => {
                 <li>Discuss your requirements and negotiate terms</li>
               </ul>
             </div>
-            <Button className="w-full">Close</Button>
+            <DialogClose asChild>
+              <Button className="w-full">Close</Button>
+            </DialogClose>
           </div>
         )}
       </DialogContent>

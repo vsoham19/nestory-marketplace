@@ -34,7 +34,6 @@ const PropertyDetail = () => {
         if (foundProperty) {
           setSelectedImage(foundProperty.images[0]);
           
-          // Fetch similar properties
           const allProperties = await getAllProperties();
           const similar = allProperties.filter(p => 
             p.id !== foundProperty.id && 
@@ -328,7 +327,10 @@ const PropertyDetail = () => {
                     <span>{developer.email}</span>
                   </div>
                   
-                  <PaymentModal propertyTitle={property.title} />
+                  <PaymentModal 
+                    propertyTitle={property.title} 
+                    propertyId={property.id} 
+                  />
                   
                   <p className="text-sm text-center text-muted-foreground">
                     Pay ₹3,000 once to get direct contact with the seller
