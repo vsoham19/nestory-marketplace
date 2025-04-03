@@ -1,27 +1,26 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, PlusCircle, User, LogIn } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Search, PlusCircle, User, LogIn, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const [isSignInOpen, setIsSignInOpen] = useState(false);
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user, isLoading, signOut } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -43,34 +42,20 @@ const Navbar = () => {
     { name: 'Add Property', path: '/add-property', icon: PlusCircle },
   ];
   
-  const handleSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate sign in
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSignInOpen(false);
-      toast({
-        title: "Sign In Successful",
-        description: "Welcome back to Estate Finder India",
-      });
-    }, 1500);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
-  
-  const handleSignUp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate sign up
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSignUpOpen(false);
-      toast({
-        title: "Account Created",
-        description: "Welcome to Estate Finder India",
-      });
-    }, 1500);
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user || !user.user_metadata?.name) return 'U';
+    const name = user.user_metadata.name as string;
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -108,96 +93,58 @@ const Navbar = () => {
         </nav>
         
         <div className="flex items-center gap-3">
-          <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="hidden md:flex gap-2 items-center">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar>
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  {user.user_metadata?.name || 'Account'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>My Profile</DropdownMenuItem>
+                <DropdownMenuItem>My Properties</DropdownMenuItem>
+                <DropdownMenuItem>Favorites</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="hidden md:flex gap-2 items-center"
+                onClick={() => navigate('/auth')}
+              >
                 <LogIn size={16} />
                 <span>Sign In</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Sign In</DialogTitle>
-                <DialogDescription>
-                  Sign in to your Estate Finder India account
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="your@email.com" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" placeholder="••••••••" required />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Button>
-                <p className="text-center text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button 
-                    type="button"
-                    className="text-primary hover:underline" 
-                    onClick={() => {
-                      setIsSignInOpen(false);
-                      setIsSignUpOpen(true);
-                    }}
-                  >
-                    Sign Up
-                  </button>
-                </p>
-              </form>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={isSignUpOpen} onOpenChange={setIsSignUpOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="hidden md:flex">Get Started</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Account</DialogTitle>
-                <DialogDescription>
-                  Join Estate Finder India to buy or sell properties
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="your@email.com" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" placeholder="+91 XXXXX XXXXX" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" placeholder="••••••••" required />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating Account..." : "Create Account"}
-                </Button>
-                <p className="text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <button 
-                    type="button"
-                    className="text-primary hover:underline" 
-                    onClick={() => {
-                      setIsSignUpOpen(false);
-                      setIsSignInOpen(true);
-                    }}
-                  >
-                    Sign In
-                  </button>
-                </p>
-              </form>
-            </DialogContent>
-          </Dialog>
+              
+              <Button 
+                size="sm" 
+                className="hidden md:flex"
+                onClick={() => {
+                  navigate('/auth');
+                  setTimeout(() => {
+                    document.querySelector('button[value="signup"]')?.click();
+                  }, 100);
+                }}
+              >
+                Get Started
+              </Button>
+            </>
+          )}
           
           <div className="md:hidden flex items-center gap-1">
             {navItems.map((item) => (
@@ -214,6 +161,15 @@ const Navbar = () => {
                 <item.icon size={20} />
               </Link>
             ))}
+            
+            {!user && (
+              <Link
+                to="/auth"
+                className="p-2 rounded-md transition-all text-foreground/70 hover:text-foreground"
+              >
+                <User size={20} />
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -105,12 +105,16 @@ export const getAllPropertiesIncludingUnpublished = async (): Promise<Property[]
 
 // Add a new property
 export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 'userId' | 'published'>): Promise<Property> => {
+  // Get the current user
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || 'anonymous';
+  
   // Create a new property with required fields
   const newProperty: Property = {
     ...property,
     id: `new-${Date.now()}`, // Generate a unique ID
     createdAt: new Date(),
-    userId: 'current-user', // In a real app, this would be the logged-in user's ID
+    userId: userId,
     published: true
   };
   
@@ -161,6 +165,56 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
   });
   
   return newProperty;
+};
+
+// Get user's properties
+export const getUserProperties = async (): Promise<Property[]> => {
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return [];
+    
+    // Fetch from Supabase
+    const { data: supabaseProperties, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('user_id', user.id);
+      
+    if (error) {
+      console.error('Error fetching user properties:', error);
+      return [];
+    }
+    
+    if (supabaseProperties && supabaseProperties.length > 0) {
+      // Map the Supabase data to our Property type
+      return supabaseProperties.map(prop => ({
+        id: prop.id,
+        title: prop.title,
+        description: prop.description || '',
+        price: prop.price,
+        address: prop.address || '',
+        city: prop.city || '',
+        state: prop.state || '',
+        zipCode: prop.zipcode || '',
+        type: 'house', // Default value
+        status: 'for-sale', // Default value
+        bedrooms: prop.bedrooms || 0,
+        bathrooms: prop.bathrooms || 0,
+        area: prop.area || 0,
+        images: prop.image_urls || [],
+        features: [], // Default value
+        createdAt: prop.created_at ? new Date(prop.created_at) : new Date(),
+        userId: prop.user_id,
+        published: prop.published === true
+      })) as Property[];
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error fetching user properties:', error);
+    return [];
+  }
 };
 
 // Update property published status
