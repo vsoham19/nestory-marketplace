@@ -17,12 +17,17 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       return false;
     }
     
+    // Convert numeric propertyId to valid UUID format if needed
+    const validPropertyId = isNaN(Number(propertyId)) ? 
+      propertyId : 
+      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    
     // Check if property is already favorited
     const { data: existingFavorite } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', propertyId)
+      .eq('property_id', validPropertyId)
       .single();
       
     if (existingFavorite) {
@@ -38,7 +43,7 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       .from('favorites')
       .insert({
         user_id: user.id,
-        property_id: propertyId
+        property_id: validPropertyId
       });
     
     if (error) {
@@ -82,12 +87,17 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
+    // Convert numeric propertyId to valid UUID format if needed
+    const validPropertyId = isNaN(Number(propertyId)) ? 
+      propertyId : 
+      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    
     // Remove from favorites
     const { error } = await supabase
       .from('favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('property_id', propertyId);
+      .eq('property_id', validPropertyId);
     
     if (error) {
       console.error('Error removing favorite:', error);
@@ -125,12 +135,17 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
+    // Convert numeric propertyId to valid UUID format if needed
+    const validPropertyId = isNaN(Number(propertyId)) ? 
+      propertyId : 
+      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    
     // Check if property is favorited
     const { data, error } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', propertyId);
+      .eq('property_id', validPropertyId);
     
     if (error) {
       console.error('Error checking favorite status:', error);
@@ -165,7 +180,19 @@ export const getUserFavorites = async () => {
       return [];
     }
     
-    return data.map(fav => fav.property_id);
+    // Convert the property IDs back to their original format if needed
+    return data.map(fav => {
+      const propertyId = fav.property_id;
+      if (propertyId && propertyId.startsWith('00000000-0000-0000-0000-0000000000')) {
+        // This might be a converted numeric ID, convert it back
+        const numericPart = propertyId.replace(/^0+/, '').replace(/-/g, '');
+        const possibleNumericId = numericPart.replace(/^0+/, '');
+        if (!isNaN(Number(possibleNumericId)) && possibleNumericId.length <= 2) {
+          return possibleNumericId;
+        }
+      }
+      return propertyId;
+    });
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return [];
