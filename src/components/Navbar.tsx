@@ -35,14 +35,9 @@ const Navbar = () => {
               Properties
             </NavLink>
             {user && (
-              <>
-                <NavLink to="/add-property" className={navLinkClasses}>
-                  Add Property
-                </NavLink>
-                <NavLink to="/payments" className={navLinkClasses}>
-                  Payment Records
-                </NavLink>
-              </>
+              <NavLink to="/add-property" className={navLinkClasses}>
+                Add Property
+              </NavLink>
             )}
           </nav>
         </div>
