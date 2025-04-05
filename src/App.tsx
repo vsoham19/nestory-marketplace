@@ -8,6 +8,7 @@ import AddProperty from '@/pages/AddProperty';
 import NewProperty from '@/pages/NewProperty';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
+import Favorites from '@/pages/Favorites';
 import NotFound from '@/pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -24,6 +25,7 @@ function App() {
           <Route path="/add-property" element={<AddProperty />} />
           <Route path="/new-property" element={<NewProperty />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/favorites" element={<Favorites />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

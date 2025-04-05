@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Bed, Bath, Maximize, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,6 +7,8 @@ import { Property } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { addToFavorites, removeFromFavorites, isPropertyFavorited } from '@/services/favoriteService';
 
 interface PropertyCardProps {
   property: Property;
@@ -15,6 +18,19 @@ interface PropertyCardProps {
 const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    // Check if property is favorited when component mounts
+    const checkFavoriteStatus = async () => {
+      if (user) {
+        const favorited = await isPropertyFavorited(property.id);
+        setIsFavorite(favorited);
+      }
+    };
+    
+    checkFavoriteStatus();
+  }, [property.id, user]);
   
   const statusColor = {
     'for-sale': 'bg-blue-100 text-blue-800',
@@ -29,6 +45,22 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  const handleFavoriteClick = async () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/auth';
+      return;
+    }
+    
+    if (isFavorite) {
+      const success = await removeFromFavorites(property.id);
+      if (success) setIsFavorite(false);
+    } else {
+      const success = await addToFavorites(property.id);
+      if (success) setIsFavorite(true);
+    }
   };
 
   return (
@@ -68,7 +100,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
           size="icon"
           variant="ghost"
           className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm hover:bg-background/80"
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={handleFavoriteClick}
         >
           <Heart 
             size={18} 

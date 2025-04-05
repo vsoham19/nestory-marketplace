@@ -14,6 +14,8 @@ import { DEVELOPERS } from '@/lib/mock-data';
 import { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { getPropertyById, getAllProperties } from '@/services/propertyService';
+import { useAuth } from '@/contexts/AuthContext';
+import { addToFavorites, removeFromFavorites, isPropertyFavorited } from '@/services/favoriteService';
 
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +24,7 @@ const PropertyDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const { user } = useAuth();
   
   useEffect(() => {
     const fetchProperty = async () => {
@@ -42,6 +45,11 @@ const PropertyDetail = () => {
           ).slice(0, 2);
           
           setSimilarProperties(similar);
+          
+          if (user) {
+            const favorited = await isPropertyFavorited(id);
+            setIsFavorite(favorited);
+          }
         }
       } catch (error) {
         console.error('Error fetching property:', error);
@@ -51,48 +59,60 @@ const PropertyDetail = () => {
     };
     
     fetchProperty();
-  }, [id]);
+  }, [id, user]);
   
   const handleImageClick = (image: string) => {
     setSelectedImage(image);
   };
   
-  if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <Navbar />
-        <div className="container-custom pt-24 pb-16">
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-1/3 mb-4" />
-            <div className="h-80 bg-muted rounded-lg mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-2 space-y-4">
-                <div className="h-12 bg-muted rounded" />
-                <div className="h-4 bg-muted rounded w-1/4" />
-                <div className="h-4 bg-muted rounded" />
-                <div className="h-4 bg-muted rounded" />
-                <div className="h-4 bg-muted rounded w-3/4" />
-              </div>
-              <div className="h-60 bg-muted rounded" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleFavoriteClick = async () => {
+    if (!user) {
+      window.location.href = '/auth';
+      return;
+    }
+    
+    if (!property) return;
+    
+    if (isFavorite) {
+      const success = await removeFromFavorites(property.id);
+      if (success) setIsFavorite(false);
+    } else {
+      const success = await addToFavorites(property.id);
+      if (success) setIsFavorite(true);
+    }
+  };
   
-  if (!property) {
+  if (isLoading || !property) {
     return (
       <div className="min-h-screen">
         <Navbar />
         <div className="container-custom pt-24 pb-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Property Not Found</h1>
-          <p className="text-muted-foreground mb-6">
-            The property you are looking for does not exist or has been removed.
-          </p>
-          <Button asChild>
-            <Link to="/properties">Browse Properties</Link>
-          </Button>
+          {isLoading ? (
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-1/3 mb-4" />
+              <div className="h-80 bg-muted rounded-lg mb-6" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="md:col-span-2 space-y-4">
+                  <div className="h-12 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                  <div className="h-4 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                </div>
+                <div className="h-60 bg-muted rounded" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold mb-4">Property Not Found</h1>
+              <p className="text-muted-foreground mb-6">
+                The property you are looking for does not exist or has been removed.
+              </p>
+              <Button asChild>
+                <Link to="/properties">Browse Properties</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -186,7 +206,7 @@ const PropertyDetail = () => {
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-full"
-                    onClick={() => setIsFavorite(!isFavorite)}
+                    onClick={handleFavoriteClick}
                   >
                     <Heart 
                       size={18} 

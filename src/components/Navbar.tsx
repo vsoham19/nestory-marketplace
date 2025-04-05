@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut } from 'lucide-react';
+import { LogOut, Heart } from 'lucide-react';
 
 const navLinkClasses =
   "text-sm font-medium text-muted-foreground hover:text-foreground";
@@ -35,9 +35,17 @@ const Navbar = () => {
               Properties
             </NavLink>
             {user && (
-              <NavLink to="/add-property" className={navLinkClasses}>
-                Add Property
-              </NavLink>
+              <>
+                <NavLink to="/add-property" className={navLinkClasses}>
+                  Add Property
+                </NavLink>
+                <NavLink to="/favorites" className={navLinkClasses}>
+                  <div className="flex items-center gap-1">
+                    <Heart size={16} />
+                    Favorites
+                  </div>
+                </NavLink>
+              </>
             )}
           </nav>
         </div>
@@ -58,6 +66,11 @@ const Navbar = () => {
               <DropdownMenuItem>
                 <Link to="/profile" className="w-full h-full block">
                   Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link to="/favorites" className="w-full h-full block">
+                  Favorites
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer" onSelect={() => signOut()}>
