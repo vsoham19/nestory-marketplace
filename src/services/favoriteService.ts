@@ -1,6 +1,32 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
+
+// Convert numeric propertyId to valid UUID format
+const formatPropertyIdToUuid = (propertyId: string): string => {
+  if (isNaN(Number(propertyId))) {
+    return propertyId; // Already a UUID format
+  }
+  
+  // Pad with zeros and format properly as UUID
+  const paddedId = propertyId.padStart(32, '0');
+  return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
+};
+
+// Convert UUID back to numeric ID if applicable
+const formatUuidToPropertyId = (uuid: string): string => {
+  if (!uuid) return '';
+  
+  // Remove hyphens and leading zeros to check if it's a numeric ID
+  const cleaned = uuid.replace(/-/g, '').replace(/^0+/, '');
+  
+  // If it's a small number (likely a converted numeric ID), return it as such
+  if (!isNaN(Number(cleaned)) && cleaned.length <= 2) {
+    return cleaned;
+  }
+  
+  // Otherwise return the original UUID
+  return uuid;
+};
 
 // Add property to favorites
 export const addToFavorites = async (propertyId: string): Promise<boolean> => {
@@ -17,20 +43,27 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       return false;
     }
     
-    // Convert numeric propertyId to valid UUID format if needed
-    const validPropertyId = isNaN(Number(propertyId)) ? 
-      propertyId : 
-      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    // Convert propertyId to UUID format
+    const validPropertyId = formatPropertyIdToUuid(propertyId);
     
     // Check if property is already favorited
-    const { data: existingFavorite } = await supabase
+    const { data: existingFavorite, error: checkError } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', validPropertyId)
-      .single();
+      .eq('property_id', validPropertyId);
       
-    if (existingFavorite) {
+    if (checkError) {
+      console.error('Error checking favorites:', checkError);
+      toast({
+        title: "Error",
+        description: "Failed to check if property is already in favorites",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (existingFavorite && existingFavorite.length > 0) {
       toast({
         title: "Already favorited",
         description: "This property is already in your favorites",
@@ -87,10 +120,8 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert numeric propertyId to valid UUID format if needed
-    const validPropertyId = isNaN(Number(propertyId)) ? 
-      propertyId : 
-      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    // Convert propertyId to UUID format
+    const validPropertyId = formatPropertyIdToUuid(propertyId);
     
     // Remove from favorites
     const { error } = await supabase
@@ -135,10 +166,8 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert numeric propertyId to valid UUID format if needed
-    const validPropertyId = isNaN(Number(propertyId)) ? 
-      propertyId : 
-      `00000000-0000-0000-0000-00000000000${propertyId}`.slice(-36);
+    // Convert propertyId to UUID format
+    const validPropertyId = formatPropertyIdToUuid(propertyId);
     
     // Check if property is favorited
     const { data, error } = await supabase
@@ -181,18 +210,7 @@ export const getUserFavorites = async () => {
     }
     
     // Convert the property IDs back to their original format if needed
-    return data.map(fav => {
-      const propertyId = fav.property_id;
-      if (propertyId && propertyId.startsWith('00000000-0000-0000-0000-0000000000')) {
-        // This might be a converted numeric ID, convert it back
-        const numericPart = propertyId.replace(/^0+/, '').replace(/-/g, '');
-        const possibleNumericId = numericPart.replace(/^0+/, '');
-        if (!isNaN(Number(possibleNumericId)) && possibleNumericId.length <= 2) {
-          return possibleNumericId;
-        }
-      }
-      return propertyId;
-    });
+    return data.map(fav => formatUuidToPropertyId(fav.property_id));
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return [];
