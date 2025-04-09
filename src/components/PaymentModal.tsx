@@ -22,6 +22,17 @@ interface PaymentModalProps {
   propertyId: string;
 }
 
+// Convert numeric propertyId to valid UUID format
+const formatPropertyIdToUuid = (propertyId: string): string => {
+  if (isNaN(Number(propertyId))) {
+    return propertyId; // Already a UUID format
+  }
+  
+  // Pad with zeros and format properly as UUID
+  const paddedId = propertyId.padStart(32, '0');
+  return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
+};
+
 const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -42,12 +53,15 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
     setIsLoading(true);
     
     try {
+      // Convert propertyId to valid UUID format for database
+      const validPropertyId = formatPropertyIdToUuid(propertyId);
+      
       // Store payment record in Supabase
       const { data, error } = await supabase
         .from('payments')
         .insert({
           user_id: user.id,
-          property_id: propertyId,
+          property_id: validPropertyId,
           amount: 3000,
           status: 'completed'
         })
