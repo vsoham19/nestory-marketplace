@@ -26,7 +26,11 @@ interface Payment {
   property_title?: string;
 }
 
-const PaymentHistory = () => {
+interface PaymentHistoryProps {
+  isAdmin?: boolean;
+}
+
+const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -35,14 +39,21 @@ const PaymentHistory = () => {
     const fetchPayments = async () => {
       setIsLoading(true);
       try {
-        // Fetch all payments with user and property details
-        const { data, error } = await supabase
+        // If admin, fetch all payments, otherwise only fetch user's payments
+        let query = supabase
           .from('payments')
           .select(`
             *,
             properties(title)
           `)
           .order('created_at', { ascending: false });
+        
+        // Filter by user_id if not admin
+        if (!isAdmin && user) {
+          query = query.eq('user_id', user.id);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -70,7 +81,13 @@ const PaymentHistory = () => {
           property_title: payment.properties?.title || 'Unknown Property'
         })) || [];
 
-        setPayments(enhancedPayments);
+        // Also fetch payments from local storage and combine with DB results
+        if (!isAdmin) {
+          const localPayments = getLocalPayments(user?.id);
+          setPayments([...enhancedPayments, ...localPayments]);
+        } else {
+          setPayments(enhancedPayments);
+        }
       } catch (error) {
         console.error('Error fetching payments:', error);
       } finally {
@@ -81,7 +98,29 @@ const PaymentHistory = () => {
     if (user) {
       fetchPayments();
     }
-  }, [user]);
+  }, [user, isAdmin]);
+
+  // Get payments from local storage
+  const getLocalPayments = (userId?: string): Payment[] => {
+    if (!userId) return [];
+    
+    try {
+      const PAYMENTS_STORAGE_KEY = 'realEstate_payments';
+      const storedPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
+      
+      // Only return payments for the current user
+      return storedPayments
+        .filter((payment: any) => payment.user_id === userId)
+        .map((payment: any) => ({
+          ...payment,
+          user_email: 'Local User',
+          property_title: 'Local Property'
+        }));
+    } catch (error) {
+      console.error('Error retrieving local payments:', error);
+      return [];
+    }
+  };
 
   if (isLoading) {
     return (
@@ -107,7 +146,9 @@ const PaymentHistory = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Payment Records</h2>
+        <h2 className="text-2xl font-bold">
+          {isAdmin ? "All Payment Records" : "Payment Records"}
+        </h2>
       </div>
 
       {payments.length === 0 ? (
@@ -116,7 +157,11 @@ const PaymentHistory = () => {
         </div>
       ) : (
         <Table>
-          <TableCaption>A list of all payment records</TableCaption>
+          <TableCaption>
+            {isAdmin 
+              ? "Complete list of all payment records across all users" 
+              : "A list of your payment records"}
+          </TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
