@@ -16,7 +16,6 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPropertyById } from '@/services/propertyService';
 
 interface PaymentModalProps {
   propertyTitle: string;
@@ -25,8 +24,9 @@ interface PaymentModalProps {
 
 // Convert numeric propertyId to valid UUID format
 const formatPropertyIdToUuid = (propertyId: string): string => {
-  if (isNaN(Number(propertyId))) {
-    return propertyId; // Already a UUID format
+  // If it already has hyphens, assume it's already a UUID
+  if (propertyId.includes('-')) {
+    return propertyId;
   }
   
   // Pad with zeros and format properly as UUID
@@ -38,7 +38,7 @@ const formatPropertyIdToUuid = (propertyId: string): string => {
 const PAYMENTS_STORAGE_KEY = 'realEstate_payments';
 
 // Save payment locally for mock properties
-const savePaymentLocally = (userId: string, propertyId: string) => {
+const savePaymentLocally = (userId: string, propertyId: string, amount: number) => {
   // Get existing payments from localStorage
   const existingPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
   
@@ -46,8 +46,8 @@ const savePaymentLocally = (userId: string, propertyId: string) => {
   existingPayments.push({
     id: `local-payment-${Date.now()}`,
     user_id: userId,
-    property_id: propertyId,
-    amount: 3000,
+    property_id: propertyId, // Store the original propertyId for local storage
+    amount: amount,
     status: 'completed',
     created_at: new Date().toISOString()
   });
@@ -76,31 +76,48 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
     setIsLoading(true);
     
     try {
-      // Convert propertyId to valid UUID format for database
-      const validPropertyId = formatPropertyIdToUuid(propertyId);
+      const amount = 3000;
       
-      // Check if the property exists in the database
+      // Try to store payment record in Supabase
       try {
-        // Try to store payment record in Supabase
+        // First try with formatted UUID
+        const validPropertyId = formatPropertyIdToUuid(propertyId);
+        console.log(`Attempting to save payment with formatted ID: ${validPropertyId}`);
+        
         const { data, error } = await supabase
           .from('payments')
           .insert({
             user_id: user.id,
             property_id: validPropertyId,
-            amount: 3000,
+            amount: amount,
             status: 'completed'
           })
           .select();
         
         if (error) {
-          // If there's an error (likely foreign key constraint), fall back to local storage
-          console.log('Falling back to local storage for payment:', error);
-          savePaymentLocally(user.id, propertyId);
+          // If there's an error with formatted ID, try with original ID
+          console.log('Error with formatted ID, trying with original:', error);
+          
+          const { data: originalData, error: originalError } = await supabase
+            .from('payments')
+            .insert({
+              user_id: user.id,
+              property_id: propertyId,
+              amount: amount,
+              status: 'completed'
+            })
+            .select();
+            
+          if (originalError) {
+            // If both approaches fail, fall back to local storage
+            console.log('Falling back to local storage for payment:', originalError);
+            savePaymentLocally(user.id, propertyId, amount);
+          }
         }
       } catch (dbError) {
         // In case of any database error, fallback to local storage
         console.log('Database error, using local storage fallback:', dbError);
-        savePaymentLocally(user.id, propertyId);
+        savePaymentLocally(user.id, propertyId, amount);
       }
       
       setIsLoading(false);
