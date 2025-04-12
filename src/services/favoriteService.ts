@@ -1,52 +1,18 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 
-// Convert numeric propertyId to valid UUID format
-const formatPropertyIdToUuid = (propertyId: string): string => {
-  if (isNaN(Number(propertyId))) {
-    return propertyId; // Already a UUID format
+// Format property ID for Supabase
+// The issue is that simple numeric IDs (like "2") aren't valid UUIDs
+// We need to ensure we're using valid UUIDs that Supabase accepts
+const formatPropertyId = (propertyId: string): string => {
+  // Check if the ID already looks like a UUID (contains hyphens)
+  if (propertyId.includes('-')) {
+    return propertyId;
   }
   
-  // Pad with zeros and format properly as UUID
-  const paddedId = propertyId.padStart(32, '0');
-  return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
-};
-
-// Convert UUID back to numeric ID if applicable
-const formatUuidToPropertyId = (uuid: string): string => {
-  if (!uuid) return '';
-  
-  // Remove hyphens and leading zeros to check if it's a numeric ID
-  const cleaned = uuid.replace(/-/g, '').replace(/^0+/, '');
-  
-  // If it's a small number (likely a converted numeric ID), return it as such
-  if (!isNaN(Number(cleaned)) && cleaned.length <= 2) {
-    return cleaned;
-  }
-  
-  // Otherwise return the original UUID
-  return uuid;
-};
-
-// Check if a property exists in the database
-const checkPropertyExists = async (propertyId: string): Promise<boolean> => {
-  try {
-    const { count, error } = await supabase
-      .from('properties')
-      .select('id', { count: 'exact', head: true })
-      .eq('id', propertyId);
-    
-    if (error) {
-      console.error('Error checking if property exists:', error);
-      return false;
-    }
-    
-    return count > 0;
-  } catch (error) {
-    console.error('Error checking if property exists:', error);
-    return false;
-  }
+  // If it's a simple numeric ID, convert it to a proper UUID format
+  // This creates a deterministic UUID based on the numeric ID
+  return `00000000-0000-0000-0000-${propertyId.padStart(12, '0')}`;
 };
 
 // Store favorite in local storage as fallback
@@ -107,8 +73,10 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       return false;
     }
     
-    // Convert propertyId to UUID format
-    const validPropertyId = formatPropertyIdToUuid(propertyId);
+    // Convert propertyId to valid UUID format for Supabase
+    const validPropertyId = formatPropertyId(propertyId);
+    
+    console.log(`Adding property to favorites: ${propertyId} (formatted as: ${validPropertyId})`);
     
     // Check if property is already favorited
     const { data: existingFavorite, error: checkError } = await supabase
@@ -135,20 +103,6 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       return true;
     }
     
-    // Check if property exists in the database
-    const propertyExists = await checkPropertyExists(validPropertyId);
-    
-    if (!propertyExists) {
-      // Store in local storage as fallback
-      addToLocalFavorites(user.id, propertyId);
-      
-      toast({
-        title: "Success",
-        description: "Property added to favorites (local only)",
-      });
-      return true;
-    }
-    
     // Add to favorites in the database
     const { error } = await supabase
       .from('favorites')
@@ -158,7 +112,7 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       });
     
     if (error) {
-      console.error('Error adding favorite:', error);
+      console.error('Error adding favorite to database:', error);
       
       // Fallback to local storage
       addToLocalFavorites(user.id, propertyId);
@@ -201,8 +155,10 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert propertyId to UUID format
-    const validPropertyId = formatPropertyIdToUuid(propertyId);
+    // Convert propertyId to valid UUID format
+    const validPropertyId = formatPropertyId(propertyId);
+    
+    console.log(`Removing property from favorites: ${propertyId} (formatted as: ${validPropertyId})`);
     
     // Remove from local storage (do this regardless of database operation)
     removeFromLocalFavorites(user.id, propertyId);
@@ -245,8 +201,8 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert propertyId to UUID format
-    const validPropertyId = formatPropertyIdToUuid(propertyId);
+    // Convert propertyId to valid UUID format
+    const validPropertyId = formatPropertyId(propertyId);
     
     // Check if property is favorited in database
     const { data, error } = await supabase
@@ -286,6 +242,8 @@ export const getUserFavorites = async () => {
       return [];
     }
     
+    console.log('Getting favorites for user:', user.id);
+    
     // Get favorites from database
     const { data, error } = await supabase
       .from('favorites')
@@ -297,12 +255,14 @@ export const getUserFavorites = async () => {
     if (error) {
       console.error('Error fetching favorites from database:', error);
     } else {
-      // Convert the property IDs back to their original format if needed
-      favorites = data.map(fav => formatUuidToPropertyId(fav.property_id));
+      // Keep the original property IDs
+      favorites = data.map(fav => fav.property_id.replace(/^0+-/, ''));
+      console.log('Favorites from database:', favorites);
     }
     
     // Merge with local favorites
     const localFavorites = getLocalFavorites(user.id);
+    console.log('Local favorites:', localFavorites);
     
     // Combine and deduplicate
     const combinedFavorites = [...favorites, ...localFavorites];

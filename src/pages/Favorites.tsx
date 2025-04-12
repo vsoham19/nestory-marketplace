@@ -25,15 +25,25 @@ const Favorites = () => {
 
       try {
         setIsLoading(true);
+        console.log('Fetching favorites...');
         // Get favorite property IDs
         const favoriteIds = await getUserFavorites();
+        console.log('Favorite IDs:', favoriteIds);
+        
+        if (favoriteIds.length === 0) {
+          setFavoriteProperties([]);
+          setIsLoading(false);
+          return;
+        }
         
         // Fetch full property data for each ID
         const propertiesPromises = favoriteIds.map(id => getPropertyById(id));
         const properties = await Promise.all(propertiesPromises);
         
         // Filter out undefined properties (in case a property was deleted)
-        setFavoriteProperties(properties.filter(Boolean) as Property[]);
+        const validProperties = properties.filter(Boolean) as Property[];
+        console.log('Valid properties:', validProperties.length);
+        setFavoriteProperties(validProperties);
       } catch (error) {
         console.error('Error fetching favorites:', error);
       } finally {
