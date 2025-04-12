@@ -1,19 +1,6 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-
-// Format property ID for Supabase
-// The issue is that simple numeric IDs (like "2") aren't valid UUIDs
-// We need to ensure we're using valid UUIDs that Supabase accepts
-const formatPropertyId = (propertyId: string): string => {
-  // Check if the ID already looks like a UUID (contains hyphens)
-  if (propertyId.includes('-')) {
-    return propertyId;
-  }
-  
-  // If it's a simple numeric ID, convert it to a proper UUID format
-  // This creates a deterministic UUID based on the numeric ID
-  return `00000000-0000-0000-0000-${propertyId.padStart(12, '0')}`;
-};
 
 // Store favorite in local storage as fallback
 const addToLocalFavorites = (userId: string, propertyId: string): void => {
@@ -73,17 +60,14 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       return false;
     }
     
-    // Convert propertyId to valid UUID format for Supabase
-    const validPropertyId = formatPropertyId(propertyId);
-    
-    console.log(`Adding property to favorites: ${propertyId} (formatted as: ${validPropertyId})`);
+    console.log(`Adding property to favorites: ${propertyId}`);
     
     // Check if property is already favorited
     const { data: existingFavorite, error: checkError } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', validPropertyId);
+      .eq('property_id', propertyId);
       
     if (checkError) {
       console.error('Error checking favorites:', checkError);
@@ -108,7 +92,7 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       .from('favorites')
       .insert({
         user_id: user.id,
-        property_id: validPropertyId
+        property_id: propertyId
       });
     
     if (error) {
@@ -155,10 +139,7 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert propertyId to valid UUID format
-    const validPropertyId = formatPropertyId(propertyId);
-    
-    console.log(`Removing property from favorites: ${propertyId} (formatted as: ${validPropertyId})`);
+    console.log(`Removing property from favorites: ${propertyId}`);
     
     // Remove from local storage (do this regardless of database operation)
     removeFromLocalFavorites(user.id, propertyId);
@@ -168,7 +149,7 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       .from('favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('property_id', validPropertyId);
+      .eq('property_id', propertyId);
     
     if (error) {
       console.error('Error removing favorite:', error);
@@ -201,15 +182,12 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Convert propertyId to valid UUID format
-    const validPropertyId = formatPropertyId(propertyId);
-    
     // Check if property is favorited in database
     const { data, error } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', validPropertyId);
+      .eq('property_id', propertyId);
     
     if (error) {
       console.error('Error checking favorite status:', error);
@@ -233,7 +211,7 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
 };
 
 // Get all favorite properties for the current user
-export const getUserFavorites = async () => {
+export const getUserFavorites = async (): Promise<string[]> => {
   try {
     // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
@@ -255,8 +233,7 @@ export const getUserFavorites = async () => {
     if (error) {
       console.error('Error fetching favorites from database:', error);
     } else {
-      // Keep the original property IDs
-      favorites = data.map(fav => fav.property_id.replace(/^0+-/, ''));
+      favorites = data.map(fav => fav.property_id);
       console.log('Favorites from database:', favorites);
     }
     
