@@ -9,9 +9,10 @@ export const formatPropertyIdToUuid = (propertyId: string): string => {
       return propertyId;
     }
     
-    // Pad with zeros and format properly as UUID
-    const paddedId = propertyId.padStart(32, '0');
-    return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
+    // For numeric IDs, create a proper UUID format
+    // Format: 00000000-0000-0000-0000-xxxxxxxxxxxx where x is the padded ID
+    const paddedId = propertyId.padStart(12, '0');
+    return `00000000-0000-0000-0000-${paddedId}`;
   } catch (error) {
     console.error('Error formatting property ID to UUID:', error);
     return propertyId; // Return original in case of any error
@@ -68,9 +69,9 @@ export const processPayment = async (userId: string, propertyId: string, amount:
         .select();
       
       if (error) {
-        // If there's an error with formatted ID, try with original ID
         console.log('Error with formatted ID, trying with original:', error);
         
+        // If there's an error with formatted ID, try with original ID
         const { data: originalData, error: originalError } = await supabase
           .from('payments')
           .insert({

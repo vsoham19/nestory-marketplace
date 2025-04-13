@@ -37,7 +37,10 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
 
         const { data, error } = await query;
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching payments:', error);
+          throw error;
+        }
 
         // Get user emails separately for each user_id
         const userEmails = new Map();
@@ -72,6 +75,13 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
         }
       } catch (error) {
         console.error('Error fetching payments:', error);
+        // If database fetch fails, at least show local payments for non-admin users
+        if (!isAdmin && user) {
+          const localPayments = getLocalPayments(user.id);
+          setPayments(localPayments);
+        } else {
+          setPayments([]);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +89,8 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
 
     if (user) {
       fetchPayments();
+    } else {
+      setIsLoading(false);
     }
   }, [user, isAdmin]);
 

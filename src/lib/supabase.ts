@@ -94,6 +94,32 @@ export type Database = {
           property_id?: string | null;
         };
       };
+      payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          property_id: string;
+          amount: number;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          property_id: string;
+          amount: number;
+          status: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          property_id?: string;
+          amount?: number;
+          status?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 };
