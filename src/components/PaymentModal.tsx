@@ -24,14 +24,19 @@ interface PaymentModalProps {
 
 // Convert numeric propertyId to valid UUID format
 const formatPropertyIdToUuid = (propertyId: string): string => {
-  // If it already has hyphens, assume it's already a UUID
-  if (propertyId.includes('-')) {
-    return propertyId;
+  try {
+    // If it already has hyphens or is a valid UUID, return as is
+    if (propertyId.includes('-')) {
+      return propertyId;
+    }
+    
+    // Pad with zeros and format properly as UUID
+    const paddedId = propertyId.padStart(32, '0');
+    return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
+  } catch (error) {
+    console.error('Error formatting property ID to UUID:', error);
+    return propertyId; // Return original in case of any error
   }
-  
-  // Pad with zeros and format properly as UUID
-  const paddedId = propertyId.padStart(32, '0');
-  return `${paddedId.slice(0, 8)}-${paddedId.slice(8, 12)}-${paddedId.slice(12, 16)}-${paddedId.slice(16, 20)}-${paddedId.slice(20)}`;
 };
 
 // Local storage key for payments
@@ -39,21 +44,26 @@ const PAYMENTS_STORAGE_KEY = 'realEstate_payments';
 
 // Save payment locally for mock properties
 const savePaymentLocally = (userId: string, propertyId: string, amount: number) => {
-  // Get existing payments from localStorage
-  const existingPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
-  
-  // Add new payment
-  existingPayments.push({
-    id: `local-payment-${Date.now()}`,
-    user_id: userId,
-    property_id: propertyId, // Store the original propertyId for local storage
-    amount: amount,
-    status: 'completed',
-    created_at: new Date().toISOString()
-  });
-  
-  // Save back to localStorage
-  localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(existingPayments));
+  try {
+    // Get existing payments from localStorage
+    const existingPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
+    
+    // Add new payment
+    existingPayments.push({
+      id: `local-payment-${Date.now()}`,
+      user_id: userId,
+      property_id: propertyId, // Store the original propertyId for local storage
+      amount: amount,
+      status: 'completed',
+      created_at: new Date().toISOString()
+    });
+    
+    // Save back to localStorage
+    localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(existingPayments));
+    console.log('Payment saved to local storage:', propertyId);
+  } catch (error) {
+    console.error('Error saving payment to local storage:', error);
+  }
 };
 
 const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
@@ -77,6 +87,7 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
     
     try {
       const amount = 3000;
+      console.log(`Processing payment for property: ${propertyId}`);
       
       // Try to store payment record in Supabase
       try {
@@ -112,7 +123,11 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
             // If both approaches fail, fall back to local storage
             console.log('Falling back to local storage for payment:', originalError);
             savePaymentLocally(user.id, propertyId, amount);
+          } else {
+            console.log('Payment saved with original ID:', originalData);
           }
+        } else {
+          console.log('Payment saved with formatted ID:', data);
         }
       } catch (dbError) {
         // In case of any database error, fallback to local storage
