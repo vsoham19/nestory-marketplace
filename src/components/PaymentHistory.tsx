@@ -2,29 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-
-interface Payment {
-  id: string;
-  user_id: string;
-  property_id: string;
-  amount: number;
-  status: string;
-  created_at: string;
-  user_email?: string;
-  property_title?: string;
-}
+import PaymentTable, { Payment } from '@/components/payment/PaymentTable';
+import PaymentSummary from '@/components/payment/PaymentSummary';
+import EmptyPayments from '@/components/payment/EmptyPayments';
+import { PAYMENTS_STORAGE_KEY } from '@/utils/paymentUtils';
 
 interface PaymentHistoryProps {
   isAdmin?: boolean;
@@ -105,7 +87,6 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
     if (!userId) return [];
     
     try {
-      const PAYMENTS_STORAGE_KEY = 'realEstate_payments';
       const storedPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
       
       // Only return payments for the current user
@@ -125,76 +106,28 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-[100px] w-full mb-6" />
         <Skeleton className="h-8 w-full" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
   }
 
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'PPP');
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
           {isAdmin ? "All Payment Records" : "Payment Records"}
         </h2>
       </div>
 
-      {payments.length === 0 ? (
-        <div className="bg-muted/50 rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">No payment records found</p>
-        </div>
+      {payments.length > 0 ? (
+        <>
+          <PaymentSummary payments={payments} isAdmin={isAdmin} />
+          <PaymentTable payments={payments} isAdmin={isAdmin} />
+        </>
       ) : (
-        <Table>
-          <TableCaption>
-            {isAdmin 
-              ? "Complete list of all payment records across all users" 
-              : "A list of your payment records"}
-          </TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Property</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell>{formatDate(payment.created_at)}</TableCell>
-                <TableCell>{payment.user_email}</TableCell>
-                <TableCell>{payment.property_title}</TableCell>
-                <TableCell>{formatAmount(payment.amount)}</TableCell>
-                <TableCell>
-                  <Badge
-                    className={
-                      payment.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : payment.status === 'failed'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }
-                  >
-                    {payment.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <EmptyPayments isAdmin={isAdmin} />
       )}
     </div>
   );
