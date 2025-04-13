@@ -23,6 +23,7 @@ interface PaymentModalProps {
 const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   
   const handlePayment = async (e: React.FormEvent) => {
@@ -41,6 +42,7 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
     
     try {
       const amount = 3000;
+      console.log(`Processing payment for property ID: ${propertyId}, User ID: ${user.id}`);
       const result = await processPayment(user.id, propertyId, amount);
       
       if (result.success) {
@@ -49,7 +51,9 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
         
         toast({
           title: "Payment Successful",
-          description: "You now have access to the seller's contact details",
+          description: result.local 
+            ? "Payment processed locally. You now have access to the seller's contact details."
+            : "Payment processed. You now have access to the seller's contact details.",
         });
       } else {
         throw new Error(result.error);
@@ -68,7 +72,7 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
   };
   
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button size="lg" className="w-full">
           Pay ₹3,000 to Contact Seller

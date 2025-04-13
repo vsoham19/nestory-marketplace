@@ -120,6 +120,32 @@ export type Database = {
           created_at?: string;
         };
       };
+      profiles: {
+        Row: {
+          id: string;
+          name: string | null;
+          email: string | null;
+          phone: string | null;
+          avatar_url: string | null;
+          role: string | null;
+        };
+        Insert: {
+          id: string;
+          name?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          avatar_url?: string | null;
+          role?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          avatar_url?: string | null;
+          role?: string | null;
+        };
+      };
     };
   };
 };
