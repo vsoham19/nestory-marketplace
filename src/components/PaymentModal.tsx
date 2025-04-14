@@ -18,9 +18,10 @@ import SellerContactInfo from '@/components/payment/SellerContactInfo';
 interface PaymentModalProps {
   propertyTitle: string;
   propertyId: string;
+  onPaymentSuccess?: () => void;
 }
 
-const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
+const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -55,6 +56,11 @@ const PaymentModal = ({ propertyTitle, propertyId }: PaymentModalProps) => {
             ? "Payment processed locally. You now have access to the seller's contact details."
             : "Payment processed. You now have access to the seller's contact details.",
         });
+        
+        // Call the onPaymentSuccess callback if provided
+        if (onPaymentSuccess) {
+          onPaymentSuccess();
+        }
       } else {
         throw new Error(result.error);
       }
