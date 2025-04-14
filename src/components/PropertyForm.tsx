@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload } from 'lucide-react';
@@ -16,11 +15,13 @@ import {
 import { Property } from '@/lib/types';
 import { addProperty } from '@/services/propertyService';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const PropertyForm = () => {
   const navigate = useNavigate();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states
   const [title, setTitle] = useState('');
@@ -69,39 +70,55 @@ const PropertyForm = () => {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
     if (!title || !description || !price || !address || !city || !state || !zipCode || uploadedImages.length < 1) {
-      alert('Please fill all required fields and upload at least one image');
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required fields and upload at least one image",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Create a new property
-    const newProperty: Omit<Property, 'id' | 'createdAt' | 'userId'> = {
-      title,
-      description,
-      price,
-      address,
-      city,
-      state, 
-      zipCode,
-      type,
-      status,
-      bedrooms,
-      bathrooms,
-      area,
-      images: uploadedImages,
-      features,
-      published: true // Add this property to fix the TypeScript error
-    };
+    setIsSubmitting(true);
     
-    // Add the property (in a real app, this would make an API call)
-    addProperty(newProperty);
-    
-    // Navigate to properties page
-    navigate('/properties');
+    try {
+      // Create a new property
+      const newProperty: Omit<Property, 'id' | 'createdAt' | 'userId' | 'published'> = {
+        title,
+        description,
+        price,
+        address,
+        city,
+        state, 
+        zipCode,
+        type,
+        status,
+        bedrooms,
+        bathrooms,
+        area,
+        images: uploadedImages,
+        features
+      };
+      
+      // Add the property to Supabase
+      await addProperty(newProperty);
+      
+      // Navigate to properties page
+      navigate('/properties');
+    } catch (error) {
+      console.error('Error submitting property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add property. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const indianCities = [

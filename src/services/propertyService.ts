@@ -109,10 +109,13 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || 'anonymous';
   
+  // Generate a UUID for the property using crypto
+  const propertyId = crypto.randomUUID();
+  
   // Create a new property with required fields
   const newProperty: Property = {
     ...property,
-    id: `new-${Date.now()}`, // Generate a unique ID
+    id: propertyId,
     createdAt: new Date(),
     userId: userId,
     published: true
@@ -123,7 +126,7 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
     const { data, error } = await supabase
       .from('properties')
       .insert({
-        id: newProperty.id,
+        id: propertyId,
         title: newProperty.title,
         description: newProperty.description,
         price: newProperty.price,
@@ -148,6 +151,14 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
     } else if (data) {
       // Successfully added to Supabase
       console.log('Property added to Supabase:', data);
+      
+      toast({
+        title: "Property Added",
+        description: "Your property has been successfully added and published to the database!",
+        duration: 5000,
+      });
+      
+      return newProperty;
     }
   } catch (error) {
     console.error('Unexpected error adding property:', error);
