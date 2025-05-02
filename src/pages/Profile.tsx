@@ -10,6 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
+import { getUserProperties, deleteProperty } from '@/services/propertyService';
+import { Property } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 
 const Profile = () => {
   const { user, session, isLoading } = useAuth();
@@ -17,6 +22,8 @@ const Profile = () => {
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false);
 
   useEffect(() => {
     // Redirect to auth page if not authenticated
@@ -30,7 +37,29 @@ const Profile = () => {
       setName(user.user_metadata.name || '');
       setPhone(user.user_metadata.phone || '');
     }
+
+    // Load user properties
+    if (user) {
+      fetchUserProperties();
+    }
   }, [user, isLoading, navigate]);
+
+  const fetchUserProperties = async () => {
+    setIsLoadingProperties(true);
+    try {
+      const userProperties = await getUserProperties();
+      setProperties(userProperties);
+    } catch (error) {
+      console.error('Failed to fetch properties:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your properties",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +67,25 @@ const Profile = () => {
       title: "Profile Update",
       description: "This feature will be implemented soon.",
     });
+  };
+
+  const handleDeleteProperty = async (propertyId: string) => {
+    try {
+      await deleteProperty(propertyId);
+      // Update the local state to remove the deleted property
+      setProperties(properties.filter(prop => prop.id !== propertyId));
+      toast({
+        title: "Property Deleted",
+        description: "Your property has been successfully deleted",
+      });
+    } catch (error) {
+      console.error('Failed to delete property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the property",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -114,6 +162,68 @@ const Profile = () => {
               </CardContent>
             </Card>
           </div>
+          
+          {/* User Properties Section */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Your Properties</CardTitle>
+              <CardDescription>Manage properties you've added</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingProperties ? (
+                <p>Loading your properties...</p>
+              ) : properties.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {properties.map((property) => (
+                      <TableRow key={property.id}>
+                        <TableCell className="font-medium">{property.title}</TableCell>
+                        <TableCell>${property.price.toLocaleString()}</TableCell>
+                        <TableCell>{property.published ? 'Published' : 'Draft'}</TableCell>
+                        <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-1 h-4 w-4" />
+                                Remove
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete your property.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteProperty(property.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">You haven't added any properties yet.</p>
+                  <Button onClick={() => navigate('/add-property')}>Add Property</Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </motion.div>
     </Layout>

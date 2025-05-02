@@ -1,4 +1,3 @@
-
 import { Property } from '@/lib/types';
 import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { toast } from '@/components/ui/use-toast';
@@ -347,6 +346,38 @@ export const getPropertyById = async (id: string): Promise<Property | undefined>
   
   // Then check new properties
   return newProperties.find(property => property.id === id);
+};
+
+// Delete a property
+export const deleteProperty = async (propertyId: string): Promise<void> => {
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('You must be logged in to delete a property');
+    }
+    
+    // First try to delete from Supabase
+    const { error } = await supabase
+      .from('properties')
+      .delete()
+      .eq('id', propertyId)
+      .eq('user_id', user.id); // Ensure users can only delete their own properties
+      
+    if (error) {
+      console.error('Error deleting from Supabase:', error);
+      // Fall back to in-memory deletion if there's an error
+      newProperties = newProperties.filter(p => p.id !== propertyId);
+    } else {
+      // Successfully deleted from Supabase
+      console.log('Property deleted from Supabase');
+    }
+  } catch (error) {
+    console.error('Unexpected error deleting property:', error);
+    // Fall back to in-memory deletion
+    newProperties = newProperties.filter(p => p.id !== propertyId);
+  }
 };
 
 // Filter properties based on criteria
