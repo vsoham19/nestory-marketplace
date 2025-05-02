@@ -2,6 +2,8 @@
 import React from 'react';
 import { Bed, Bath, Maximize, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PropertyDetailsProps {
   price: number;
@@ -12,7 +14,78 @@ interface PropertyDetailsProps {
   createdAt: Date;
   description: string;
   features: string[];
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
 }
+
+const PropertyMap = ({ address, city, state, zipCode }: { 
+  address: string; 
+  city: string; 
+  state: string; 
+  zipCode: string; 
+}) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  });
+
+  const [map, setMap] = React.useState<google.maps.Map | null>(null);
+  const [location, setLocation] = React.useState<google.maps.LatLngLiteral | null>(null);
+
+  React.useEffect(() => {
+    if (isLoaded && !location) {
+      const geocoder = new google.maps.Geocoder();
+      const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
+      
+      geocoder.geocode({ address: fullAddress }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const position = {
+            lat: results[0].geometry.location.lat(),
+            lng: results[0].geometry.location.lng()
+          };
+          setLocation(position);
+        }
+      });
+    }
+  }, [isLoaded, address, city, state, zipCode, location]);
+
+  const onLoad = React.useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+  }, []);
+
+  const onUnmount = React.useCallback(() => {
+    setMap(null);
+  }, []);
+
+  if (!isLoaded) {
+    return <Skeleton className="w-full h-[400px] rounded-lg" />;
+  }
+
+  return (
+    <div className="h-[400px] w-full rounded-lg overflow-hidden">
+      <GoogleMap
+        mapContainerStyle={{
+          width: '100%',
+          height: '100%'
+        }}
+        center={location || { lat: 20.5937, lng: 78.9629 }} // Default to center of India if location not found
+        zoom={location ? 15 : 4}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        options={{
+          disableDefaultUI: false,
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: false
+        }}
+      >
+        {location && <Marker position={location} />}
+      </GoogleMap>
+    </div>
+  );
+};
 
 const PropertyDetails = ({
   price,
@@ -22,7 +95,11 @@ const PropertyDetails = ({
   area,
   createdAt,
   description,
-  features
+  features,
+  address = "",
+  city = "",
+  state = "",
+  zipCode = ""
 }: PropertyDetailsProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -84,8 +161,16 @@ const PropertyDetails = ({
           </div>
         </TabsContent>
         <TabsContent value="location">
-          <div className="bg-muted aspect-video rounded-lg flex items-center justify-center">
-            <p className="text-muted-foreground">Map view coming soon</p>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              {address}, {city}, {state} {zipCode}
+            </p>
+            <PropertyMap 
+              address={address}
+              city={city}
+              state={state}
+              zipCode={zipCode}
+            />
           </div>
         </TabsContent>
       </Tabs>

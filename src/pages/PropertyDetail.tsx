@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -127,6 +126,10 @@ const PropertyDetail = () => {
                 createdAt={property.createdAt}
                 description={property.description}
                 features={property.features}
+                address={property.address}
+                city={property.city}
+                state={property.state}
+                zipCode={property.zipCode}
               />
               
               <SimilarProperties properties={similarProperties} />
