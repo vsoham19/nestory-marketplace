@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Bed, Bath, Maximize, Calendar } from 'lucide-react';
+import { Bed, Bath, Maximize, Calendar, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface PropertyDetailsProps {
   price: number;
@@ -26,9 +27,10 @@ const PropertyMap = ({ address, city, state, zipCode }: {
   state: string; 
   zipCode: string; 
 }) => {
-  const { isLoaded } = useJsApiLoader({
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+    googleMapsApiKey: apiKey
   });
 
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
@@ -58,6 +60,32 @@ const PropertyMap = ({ address, city, state, zipCode }: {
   const onUnmount = React.useCallback(() => {
     setMap(null);
   }, []);
+
+  // Display an error if API key is missing
+  if (!apiKey) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Google Maps API Key Missing</AlertTitle>
+        <AlertDescription>
+          Please add your Google Maps API key to the .env file as VITE_GOOGLE_MAPS_API_KEY.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Display an error if there was a problem loading the API
+  if (loadError) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Google Maps Error</AlertTitle>
+        <AlertDescription>
+          Failed to load Google Maps API: {loadError.message}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (!isLoaded) {
     return <Skeleton className="w-full h-[400px] rounded-lg" />;
