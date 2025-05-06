@@ -25,6 +25,12 @@ const TeamMember: React.FC<TeamMemberProps> = ({ name, role, description, imageS
             src={imageSrc} 
             alt={`${name} - ${role}`}
             className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              console.error(`Failed to load image: ${target.src}`);
+              // Fallback to a placeholder if image fails to load
+              target.src = '/placeholder.svg';
+            }}
           />
         </div>
         <CardContent className="p-6 flex flex-col flex-grow">
