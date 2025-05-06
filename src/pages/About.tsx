@@ -58,14 +58,14 @@ const About = () => {
               name="Krushil"
               role="System Architect"
               description="Krushil led the system design of Estate Finder, creating a robust and scalable architecture that powers our platform. His expertise in designing efficient systems ensures our website can handle thousands of property listings while maintaining optimal performance."
-              imageSrc="/lovable-uploads/67e5abc8-909d-4e5b-9372-b16c2e968568.png"
+              imageSrc="/lovable-uploads/e5a9e578-f568-4b5d-a8ab-c297c14430a4.png"
               delay={0.4}
             />
             <TeamMember
               name="Soham"
               role="Backend Developer"
               description="Soham built the backend infrastructure using Supabase, developing the data dictionary and defining relationships between different entities. His work enables seamless data flow, secure authentication, and efficient property search capabilities."
-              imageSrc="/lovable-uploads/405fa31d-982a-4295-83cd-d344aac9a73e.png"
+              imageSrc="/lovable-uploads/eb6b7e12-1af1-404e-8792-8b56190de6d8.png"
               delay={0.5}
             />
             <TeamMember
