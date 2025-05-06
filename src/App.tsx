@@ -12,6 +12,7 @@ import Favorites from '@/pages/Favorites';
 import Payments from '@/pages/Payments';
 import AdminPayments from '@/pages/AdminPayments';
 import NotFound from '@/pages/NotFound';
+import About from '@/pages/About';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import './App.css';
@@ -30,6 +31,7 @@ function App() {
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/admin/payments" element={<AdminPayments />} />
+          <Route path="/about" element={<About />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

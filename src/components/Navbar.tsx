@@ -39,6 +39,9 @@ const Navbar = () => {
             <NavLink to="/properties" className={navLinkClasses}>
               Properties
             </NavLink>
+            <NavLink to="/about" className={navLinkClasses}>
+              About Us
+            </NavLink>
             {user && (
               <>
                 <NavLink to="/add-property" className={navLinkClasses}>
@@ -116,6 +119,9 @@ const Navbar = () => {
             </NavLink>
             <NavLink to="/properties" className={navLinkClasses} onClick={() => setMobileMenuOpen(false)}>
               Properties
+            </NavLink>
+            <NavLink to="/about" className={navLinkClasses} onClick={() => setMobileMenuOpen(false)}>
+              About Us
             </NavLink>
             {user && (
               <>
