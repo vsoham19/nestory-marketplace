@@ -63,6 +63,22 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     }
   };
 
+  // Function to get a valid image URL
+  const getPropertyImage = () => {
+    if (!property.images || property.images.length === 0) {
+      return '/placeholder.svg';
+    }
+    
+    const image = property.images[0];
+    
+    // Check if the image is a blob URL (which doesn't persist after refreshes)
+    if (image.startsWith('blob:')) {
+      return '/placeholder.svg';
+    }
+    
+    return image;
+  };
+
   return (
     <Card 
       className={cn(
@@ -78,13 +94,17 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
           )}
         />
         <img
-          src={property.images[0]} 
+          src={getPropertyImage()} 
           alt={property.title}
           className={cn(
             "h-full w-full object-cover transition-all duration-300",
             !isLoaded && "scale-105 blur-sm"
           )}
           onLoad={() => setIsLoaded(true)}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/placeholder.svg';
+          }}
         />
         <div className="absolute top-3 left-3 flex gap-2">
           <Badge className={cn("capitalize", statusColor[property.status])}>

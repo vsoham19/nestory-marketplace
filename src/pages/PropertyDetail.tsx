@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -30,13 +31,26 @@ const PropertyDetail = () => {
       setIsLoading(true);
       try {
         const foundProperty = await getPropertyById(id);
-        setProperty(foundProperty || null);
+        
         if (foundProperty) {
+          // Filter out any blob URLs from the images array
+          const processedProperty = {
+            ...foundProperty,
+            images: foundProperty.images?.filter(img => !img.startsWith('blob:')) || []
+          };
+          
+          // If no valid images remain, add a placeholder
+          if (processedProperty.images.length === 0) {
+            processedProperty.images = ['/placeholder.svg'];
+          }
+          
+          setProperty(processedProperty);
+          
           const allProperties = await getAllProperties();
           const similar = allProperties.filter(p => 
-            p.id !== foundProperty.id && 
-            p.type === foundProperty.type &&
-            p.status === foundProperty.status
+            p.id !== processedProperty.id && 
+            p.type === processedProperty.type &&
+            p.status === processedProperty.status
           ).slice(0, 2);
           
           setSimilarProperties(similar);
@@ -45,9 +59,12 @@ const PropertyDetail = () => {
             const favorited = await isPropertyFavorited(id);
             setIsFavorite(favorited);
           }
+        } else {
+          setProperty(null);
         }
       } catch (error) {
         console.error('Error fetching property:', error);
+        setProperty(null);
       } finally {
         setIsLoading(false);
       }
