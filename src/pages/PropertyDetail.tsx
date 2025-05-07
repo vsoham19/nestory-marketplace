@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -58,8 +57,13 @@ const PropertyDetail = () => {
           setSimilarProperties(processedSimilar);
           
           if (user) {
-            const favorited = await isPropertyFavorited(id);
-            setIsFavorite(favorited);
+            try {
+              const favorited = await isPropertyFavorited(id);
+              setIsFavorite(favorited);
+            } catch (error) {
+              console.error('Error checking favorite status:', error);
+              // Continue without setting favorite status
+            }
           }
         } else {
           setProperty(null);
@@ -82,9 +86,13 @@ const PropertyDetail = () => {
     }
     
     // Filter out blob URLs and data URLs which don't persist after refresh
+    // Keep all other image URLs regardless of extension (.jpg, .png, .avif, etc)
     const validImages = images.filter(img => 
       !(img.startsWith('blob:') || img.startsWith('data:'))
     );
+    
+    // Log the image URLs for debugging
+    console.log('Valid image URLs:', validImages);
     
     // If no valid images remain, return placeholder
     if (validImages.length === 0) {

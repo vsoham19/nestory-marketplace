@@ -21,10 +21,15 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
     }
     
     // Process and validate image URLs
-    const processedImages = images.filter(img => 
+    const processedImages = images.filter(img => {
       // Keep URLs that are not blob: or data: URLs as they don't persist after refresh
-      !(img.startsWith('blob:') || img.startsWith('data:'))
-    );
+      if (img.startsWith('blob:') || img.startsWith('data:')) {
+        return false;
+      }
+      
+      // Keep all other image URLs regardless of extension
+      return true;
+    });
     
     const imageUrls = processedImages.length > 0 ? processedImages : ['/placeholder.svg'];
     setValidImages(imageUrls);

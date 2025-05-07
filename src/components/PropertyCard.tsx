@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Bed, Bath, Maximize, ArrowRight } from 'lucide-react';
@@ -24,8 +23,12 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     // Check if property is favorited when component mounts
     const checkFavoriteStatus = async () => {
       if (user) {
-        const favorited = await isPropertyFavorited(property.id);
-        setIsFavorite(favorited);
+        try {
+          const favorited = await isPropertyFavorited(property.id);
+          setIsFavorite(favorited);
+        } catch (error) {
+          console.error('Error checking favorite status:', error);
+        }
       }
     };
     
@@ -72,12 +75,15 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     const image = property.images[0];
     
     // Check if the image is a blob URL (which doesn't persist after refreshes)
-    if (image.startsWith('blob:')) {
+    if (image.startsWith('blob:') || image.startsWith('data:')) {
       return '/placeholder.svg';
     }
     
     return image;
   };
+
+  // Log the property image URL for debugging
+  console.log('Property image URL:', getPropertyImage());
 
   return (
     <Card 
@@ -104,6 +110,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = '/placeholder.svg';
+            setIsLoaded(true);
           }}
         />
         <div className="absolute top-3 left-3 flex gap-2">
