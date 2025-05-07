@@ -1,7 +1,9 @@
+
 import { Property } from '@/lib/types';
 import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { formatPropertyIdToUuid } from '@/utils/paymentUtils';
 
 // In-memory storage for new properties
 let newProperties: Property[] = [];
@@ -22,6 +24,8 @@ export const getAllProperties = async (): Promise<Property[]> => {
     }
     
     if (supabaseProperties && supabaseProperties.length > 0) {
+      console.log('Properties fetched from Supabase:', supabaseProperties);
+      
       // Map the Supabase data to our Property type
       const mappedProperties = supabaseProperties.map(prop => ({
         id: prop.id,
@@ -121,11 +125,19 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
   };
   
   try {
+    console.log('Adding property to Supabase with ID:', propertyId);
+    console.log('Property data:', {
+      title: newProperty.title,
+      description: newProperty.description,
+      price: newProperty.price,
+      images: newProperty.images
+    });
+    
     // First try to add to Supabase
     const { data, error } = await supabase
       .from('properties')
       .insert({
-        id: propertyId,
+        id: propertyId, // Using the UUID directly
         title: newProperty.title,
         description: newProperty.description,
         price: newProperty.price,
@@ -145,8 +157,49 @@ export const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 
       
     if (error) {
       console.error('Error adding to Supabase:', error);
-      // Fall back to in-memory storage
-      newProperties = [newProperty, ...newProperties];
+      
+      // Try one more time with a formatted UUID
+      const formattedId = formatPropertyIdToUuid(propertyId);
+      console.log('Trying again with formatted ID:', formattedId);
+      
+      const { data: formattedData, error: formattedError } = await supabase
+        .from('properties')
+        .insert({
+          id: formattedId,
+          title: newProperty.title,
+          description: newProperty.description,
+          price: newProperty.price,
+          address: newProperty.address,
+          city: newProperty.city,
+          state: newProperty.state,
+          zipcode: newProperty.zipCode,
+          bedrooms: newProperty.bedrooms,
+          bathrooms: newProperty.bathrooms,
+          area: newProperty.area,
+          image_urls: newProperty.images,
+          user_id: newProperty.userId,
+          published: newProperty.published
+        })
+        .select()
+        .single();
+        
+      if (formattedError) {
+        console.error('Error adding to Supabase with formatted ID:', formattedError);
+        // Fall back to in-memory storage
+        newProperties = [newProperty, ...newProperties];
+      } else if (formattedData) {
+        // Update the ID in our object to match what's stored in Supabase
+        newProperty.id = formattedData.id;
+        console.log('Property added to Supabase with formatted ID:', formattedData);
+        
+        toast({
+          title: "Property Added",
+          description: "Your property has been successfully added and published to the database!",
+          duration: 5000,
+        });
+        
+        return newProperty;
+      }
     } else if (data) {
       // Successfully added to Supabase
       console.log('Property added to Supabase:', data);
@@ -197,6 +250,8 @@ export const getUserProperties = async (): Promise<Property[]> => {
     }
     
     if (supabaseProperties && supabaseProperties.length > 0) {
+      console.log('User properties from Supabase:', supabaseProperties);
+      
       // Map the Supabase data to our Property type
       return supabaseProperties.map(prop => ({
         id: prop.id,
@@ -304,16 +359,38 @@ export const updatePropertyPublishedStatus = async (propertyId: string, publishe
 // Get a single property by ID
 export const getPropertyById = async (id: string): Promise<Property | undefined> => {
   try {
-    // Try to get from Supabase first
-    const { data, error } = await supabase
+    console.log('Fetching property with ID:', id);
+    
+    // Try first with the original ID
+    let { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('id', id)
       .single();
       
     if (error) {
-      console.error('Error fetching from Supabase:', error);
-    } else if (data) {
+      console.log('Error fetching with original ID, trying with formatted ID');
+      // Try with formatted ID
+      const formattedId = formatPropertyIdToUuid(id);
+      console.log('Formatted ID:', formattedId);
+      
+      const { data: formattedData, error: formattedError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('id', formattedId)
+        .single();
+        
+      if (formattedError) {
+        console.error('Error fetching with formatted ID:', formattedError);
+      } else if (formattedData) {
+        data = formattedData;
+        console.log('Found with formatted ID:', formattedData);
+      }
+    } else {
+      console.log('Found with original ID:', data);
+    }
+    
+    if (data) {
       // Successfully retrieved from Supabase
       return {
         id: data.id,

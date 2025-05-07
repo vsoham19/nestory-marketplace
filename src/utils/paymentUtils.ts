@@ -4,12 +4,18 @@
 // Convert numeric propertyId to valid UUID format
 export const formatPropertyIdToUuid = (propertyId: string): string => {
   try {
-    // If it already has hyphens or is a valid UUID, return as is
-    if (propertyId.includes('-')) {
+    // If it already looks like a valid UUID with hyphens, return as is
+    if (propertyId.includes('-') && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId)) {
       return propertyId;
     }
     
-    // For numeric IDs, create a proper UUID format
+    // For properties that might already be UUIDs but without hyphens
+    if (propertyId.length === 32) {
+      return `${propertyId.substring(0, 8)}-${propertyId.substring(8, 12)}-${propertyId.substring(12, 16)}-${propertyId.substring(16, 20)}-${propertyId.substring(20)}`;
+    }
+    
+    // For numeric IDs or other formats, create a proper UUID format
     // Format: 00000000-0000-0000-0000-xxxxxxxxxxxx where x is the padded ID
     const paddedId = propertyId.padStart(12, '0');
     return `00000000-0000-0000-0000-${paddedId}`;

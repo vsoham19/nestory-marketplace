@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
+import { formatPropertyIdToUuid } from '@/utils/paymentUtils';
 
 // Store favorite in local storage as fallback
 const addToLocalFavorites = (userId: string, propertyId: string): void => {
@@ -62,12 +63,16 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
     
     console.log(`Adding property to favorites: ${propertyId}`);
     
+    // Format the property ID to ensure UUID compatibility
+    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
+    console.log(`Formatted property ID: ${formattedPropertyId}`);
+    
     // Check if property is already favorited
     const { data: existingFavorite, error: checkError } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', propertyId);
+      .eq('property_id', formattedPropertyId);
       
     if (checkError) {
       console.error('Error checking favorites:', checkError);
@@ -92,7 +97,7 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
       .from('favorites')
       .insert({
         user_id: user.id,
-        property_id: propertyId
+        property_id: formattedPropertyId
       });
     
     if (error) {
@@ -141,6 +146,10 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
     
     console.log(`Removing property from favorites: ${propertyId}`);
     
+    // Format the property ID
+    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
+    console.log(`Formatted property ID: ${formattedPropertyId}`);
+    
     // Remove from local storage (do this regardless of database operation)
     removeFromLocalFavorites(user.id, propertyId);
     
@@ -149,7 +158,7 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
       .from('favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('property_id', propertyId);
+      .eq('property_id', formattedPropertyId);
     
     if (error) {
       console.error('Error removing favorite:', error);
@@ -182,12 +191,15 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
+    // Format the property ID
+    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
+    
     // Check if property is favorited in database
     const { data, error } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', propertyId);
+      .eq('property_id', formattedPropertyId);
     
     if (error) {
       console.error('Error checking favorite status:', error);

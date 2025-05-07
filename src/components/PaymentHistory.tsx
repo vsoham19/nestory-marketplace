@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PaymentTable, { Payment } from '@/components/payment/PaymentTable';
 import PaymentSummary from '@/components/payment/PaymentSummary';
 import EmptyPayments from '@/components/payment/EmptyPayments';
-import { PAYMENTS_STORAGE_KEY } from '@/utils/paymentUtils';
+import { PAYMENTS_STORAGE_KEY, formatPropertyIdToUuid } from '@/utils/paymentUtils';
 
 interface PaymentHistoryProps {
   isAdmin?: boolean;
@@ -41,6 +41,8 @@ const PaymentHistory = ({ isAdmin = false }: PaymentHistoryProps) => {
           console.error('Error fetching payments:', error);
           throw error;
         }
+
+        console.log('Payments data from Supabase:', data);
 
         // Get user emails separately for each user_id
         const userEmails = new Map();
