@@ -33,19 +33,15 @@ const PropertyDetail = () => {
         const foundProperty = await getPropertyById(id);
         
         if (foundProperty) {
-          // Filter out any blob URLs from the images array
+          // Process the property to ensure valid image URLs
           const processedProperty = {
             ...foundProperty,
-            images: foundProperty.images?.filter(img => !img.startsWith('blob:')) || []
+            images: processImageUrls(foundProperty.images)
           };
-          
-          // If no valid images remain, add a placeholder
-          if (processedProperty.images.length === 0) {
-            processedProperty.images = ['/placeholder.svg'];
-          }
           
           setProperty(processedProperty);
           
+          // Fetch similar properties
           const allProperties = await getAllProperties();
           const similar = allProperties.filter(p => 
             p.id !== processedProperty.id && 
@@ -53,7 +49,13 @@ const PropertyDetail = () => {
             p.status === processedProperty.status
           ).slice(0, 2);
           
-          setSimilarProperties(similar);
+          // Process image URLs for similar properties as well
+          const processedSimilar = similar.map(p => ({
+            ...p,
+            images: processImageUrls(p.images)
+          }));
+          
+          setSimilarProperties(processedSimilar);
           
           if (user) {
             const favorited = await isPropertyFavorited(id);
@@ -72,6 +74,25 @@ const PropertyDetail = () => {
     
     fetchProperty();
   }, [id, user]);
+  
+  // Helper function to process image URLs
+  const processImageUrls = (images: string[] | undefined): string[] => {
+    if (!images || images.length === 0) {
+      return ['/placeholder.svg'];
+    }
+    
+    // Filter out blob URLs and data URLs which don't persist after refresh
+    const validImages = images.filter(img => 
+      !(img.startsWith('blob:') || img.startsWith('data:'))
+    );
+    
+    // If no valid images remain, return placeholder
+    if (validImages.length === 0) {
+      return ['/placeholder.svg'];
+    }
+    
+    return validImages;
+  };
   
   const handleFavoriteClick = async () => {
     if (!user) {

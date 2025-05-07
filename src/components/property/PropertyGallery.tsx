@@ -1,7 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ImageOff } from 'lucide-react';
 
 interface PropertyGalleryProps {
   images: string[];
@@ -9,27 +9,27 @@ interface PropertyGalleryProps {
 }
 
 const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
-  const [selectedImage, setSelectedImage] = useState<string>(getFirstValidImage(images));
+  const [validImages, setValidImages] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string>('/placeholder.svg');
   
-  // Function to handle blob URLs and ensure we always have a valid image
-  function getFirstValidImage(imageArray: string[]): string {
-    if (!imageArray || imageArray.length === 0) {
-      return '/placeholder.svg';
+  useEffect(() => {
+    // Process images on component mount or when images prop changes
+    if (!images || images.length === 0) {
+      setValidImages(['/placeholder.svg']);
+      setSelectedImage('/placeholder.svg');
+      return;
     }
     
-    // Filter out blob URLs as they don't persist after page refresh
-    const validImages = imageArray.filter(img => !img.startsWith('blob:'));
+    // Process and validate image URLs
+    const processedImages = images.filter(img => 
+      // Keep URLs that are not blob: or data: URLs as they don't persist after refresh
+      !(img.startsWith('blob:') || img.startsWith('data:'))
+    );
     
-    if (validImages.length === 0) {
-      return '/placeholder.svg';
-    }
-    
-    return validImages[0];
-  }
-  
-  // Get valid images for the gallery
-  const validImages = images.filter(img => !img.startsWith('blob:'));
-  const galleryImages = validImages.length > 0 ? validImages : ['/placeholder.svg'];
+    const imageUrls = processedImages.length > 0 ? processedImages : ['/placeholder.svg'];
+    setValidImages(imageUrls);
+    setSelectedImage(imageUrls[0]);
+  }, [images]);
   
   const handleImageClick = (image: string) => {
     setSelectedImage(image);
@@ -43,7 +43,7 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-      <div className="lg:col-span-2 relative rounded-lg overflow-hidden aspect-video">
+      <div className="lg:col-span-2 relative rounded-lg overflow-hidden aspect-video bg-muted/30">
         <AnimatePresence mode="wait">
           <motion.img
             key={selectedImage}
@@ -57,14 +57,21 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
             onError={handleImageError}
           />
         </AnimatePresence>
+        
+        {selectedImage === '/placeholder.svg' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
+            <ImageOff size={48} strokeWidth={1.5} />
+            <p className="mt-2">No image available</p>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        {galleryImages.map((image, index) => (
+        {validImages.map((image, index) => (
           <div 
-            key={index}
+            key={`${image}-${index}`}
             className={cn(
-              "relative rounded-lg overflow-hidden aspect-video cursor-pointer",
+              "relative rounded-lg overflow-hidden aspect-video cursor-pointer bg-muted/30",
               selectedImage === image && "ring-2 ring-primary"
             )}
             onClick={() => handleImageClick(image)}
@@ -75,6 +82,12 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
               className="w-full h-full object-cover"
               onError={handleImageError}
             />
+            
+            {image === '/placeholder.svg' && (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                <ImageOff size={24} strokeWidth={1.5} />
+              </div>
+            )}
           </div>
         ))}
       </div>
