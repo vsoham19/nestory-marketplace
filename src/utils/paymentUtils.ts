@@ -15,10 +15,10 @@ export const formatPropertyIdToUuid = (propertyId: string): string => {
       return `${propertyId.substring(0, 8)}-${propertyId.substring(8, 12)}-${propertyId.substring(12, 16)}-${propertyId.substring(16, 20)}-${propertyId.substring(20)}`;
     }
     
-    // For numeric IDs or other formats, create a proper UUID format
-    // Format: 00000000-0000-0000-0000-xxxxxxxxxxxx where x is the padded ID
+    // For numeric IDs or other formats, create a proper UUID format with prefix
+    // Format: ffffffff-ffff-ffff-ffff-xxxxxxxxxxxx where x is the padded ID
     const paddedId = propertyId.padStart(12, '0');
-    return `00000000-0000-0000-0000-${paddedId}`;
+    return `ffffffff-ffff-ffff-ffff-${paddedId}`;
   } catch (error) {
     console.error('Error formatting property ID to UUID:', error);
     return propertyId; // Return original in case of any error
@@ -65,6 +65,8 @@ export const sendPaymentNotificationEmail = async (
     const { supabase } = await import('@/lib/supabase');
     console.log('Sending payment notification email to admin');
     
+    const adminEmail = 'sohamvaghasia004@gmail.com';
+    
     const { error } = await supabase.functions.invoke('send-payment-notification', {
       body: {
         userId,
@@ -73,7 +75,7 @@ export const sendPaymentNotificationEmail = async (
         buyerEmail,
         propertyTitle,
         sellerEmail,
-        adminEmail: 'sohamvaghasia004@gmail.com' // Admin email address
+        adminEmail
       }
     });
     
@@ -188,7 +190,7 @@ export const processPayment = async (userId: string, propertyId: string, amount:
         const { data: propertyData } = await supabase
           .from('properties')
           .select('title, user_id')
-          .eq('id', propertyId)
+          .eq('id', validPropertyId)
           .single();
           
         // Fetch seller email if property data exists
@@ -208,7 +210,7 @@ export const processPayment = async (userId: string, propertyId: string, amount:
         // Send email notification
         await sendPaymentNotificationEmail(
           userId,
-          propertyId,
+          validPropertyId,
           amount,
           userData?.email || 'unknown',
           propertyData?.title || 'Unknown Property',

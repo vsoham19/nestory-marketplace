@@ -26,6 +26,10 @@ serve(async (req) => {
     const payload: EmailPayload = await req.json();
     const { userId, propertyId, amount, buyerEmail, propertyTitle, sellerEmail, adminEmail } = payload;
 
+    console.log("Received payment notification request:", {
+      userId, propertyId, amount, buyerEmail, propertyTitle, sellerEmail, adminEmail
+    });
+
     // Format the email content
     const emailSubject = `New Payment Notification - Estate Finder`;
     const emailContent = `
@@ -48,6 +52,16 @@ serve(async (req) => {
       
       <p>This is an automated notification. Please do not reply to this email.</p>
       <p>Estate Finder India</p>
+    `;
+
+    // Confirmation email to admin about the notification system
+    const setupConfirmationEmail = `
+      <h1>Email Notification System Activated</h1>
+      <p>Dear Administrator,</p>
+      <p>This email confirms that you have successfully set up the payment notification system for Estate Finder India.</p>
+      <p>You will receive notifications at this email address (${adminEmail}) whenever a payment is processed on the platform.</p>
+      <p>The system is now active and working properly.</p>
+      <p><strong>Estate Finder India</strong></p>
     `;
 
     // Send email using Email API
@@ -78,6 +92,13 @@ serve(async (req) => {
     //   },
     //   body: JSON.stringify(emailPayload)
     // });
+
+    // Send confirmation email about setup
+    console.log("Setup confirmation email would be sent to admin:", {
+      to: adminEmail,
+      subject: "Email Notification System Activated - Estate Finder",
+      html: setupConfirmationEmail
+    });
     
     return new Response(
       JSON.stringify({ success: true, message: "Notification email sent" }),

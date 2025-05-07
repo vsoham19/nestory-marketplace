@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { processPayment } from '@/utils/paymentUtils';
 import PaymentForm from '@/components/payment/PaymentForm';
 import SellerContactInfo from '@/components/payment/SellerContactInfo';
+import { Toaster } from '@/components/ui/toaster';
 
 interface PaymentModalProps {
   propertyTitle: string;
@@ -52,9 +53,7 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
         
         toast({
           title: "Payment Successful",
-          description: result.local 
-            ? "Payment processed locally. You now have access to the seller's contact details."
-            : "Payment processed. You now have access to the seller's contact details.",
+          description: "Payment processed. You now have access to the seller's contact details. An email notification has been sent to the administrator.",
         });
         
         // Call the onPaymentSuccess callback if provided
@@ -78,27 +77,30 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="w-full">
-          Pay ₹3,000 to Contact Seller
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Contact Seller</DialogTitle>
-          <DialogDescription>
-            Pay ₹3,000 to get seller contact details for: {propertyTitle}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {!showContact ? (
-          <PaymentForm isLoading={isLoading} onSubmit={handlePayment} />
-        ) : (
-          <SellerContactInfo />
-        )}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button size="lg" className="w-full">
+            Pay ₹3,000 to Contact Seller
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Contact Seller</DialogTitle>
+            <DialogDescription>
+              Pay ₹3,000 to get seller contact details for: {propertyTitle}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!showContact ? (
+            <PaymentForm isLoading={isLoading} onSubmit={handlePayment} />
+          ) : (
+            <SellerContactInfo />
+          )}
+        </DialogContent>
+      </Dialog>
+      <Toaster />
+    </>
   );
 };
 

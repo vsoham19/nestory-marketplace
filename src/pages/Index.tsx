@@ -161,7 +161,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-secondary pt-12 pb-6">
         <div className="container-custom">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
             <div>
               <h3 className="font-semibold text-lg mb-4">Estate Finder</h3>
               <p className="text-muted-foreground mb-4">
@@ -176,22 +176,6 @@ const Index = () => {
                   <li key={item}>
                     <Link 
                       to={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`}
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-4">Property Types</h3>
-              <ul className="space-y-2">
-                {['Houses', 'Apartments', 'Condos', 'Townhouses', 'Commercial', 'Land'].map((item) => (
-                  <li key={item}>
-                    <Link 
-                      to={`/properties?type=${item.toLowerCase()}`}
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
                       {item}
