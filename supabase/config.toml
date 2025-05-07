@@ -1,2 +1,5 @@
 
 project_id = "wixngvknbvjthbasfijk"
+
+[functions.send-payment-notification]
+verify_jwt = true

@@ -13,19 +13,19 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          property_id: string | null
+          property_id: number | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
-          property_id?: string | null
+          property_id?: number | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
-          property_id?: string | null
+          property_id?: number | null
           user_id?: string | null
         }
         Relationships: []
@@ -146,6 +146,39 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           zipcode?: string | null
+        }
+        Relationships: []
+      }
+      Property: {
+        Row: {
+          area: string | null
+          bathroom: string | null
+          bedroom: string | null
+          city: string | null
+          id: number
+          price: string | null
+          title: string | null
+          user: string | null
+        }
+        Insert: {
+          area?: string | null
+          bathroom?: string | null
+          bedroom?: string | null
+          city?: string | null
+          id?: number
+          price?: string | null
+          title?: string | null
+          user?: string | null
+        }
+        Update: {
+          area?: string | null
+          bathroom?: string | null
+          bedroom?: string | null
+          city?: string | null
+          id?: number
+          price?: string | null
+          title?: string | null
+          user?: string | null
         }
         Relationships: []
       }

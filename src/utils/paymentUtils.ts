@@ -52,6 +52,44 @@ export const savePaymentLocally = (userId: string, propertyId: string, amount: n
   }
 };
 
+// Send email notification to admin about payment
+export const sendPaymentNotificationEmail = async (
+  userId: string, 
+  propertyId: string, 
+  amount: number,
+  buyerEmail: string,
+  propertyTitle: string, 
+  sellerEmail: string
+) => {
+  try {
+    const { supabase } = await import('@/lib/supabase');
+    console.log('Sending payment notification email to admin');
+    
+    const { error } = await supabase.functions.invoke('send-payment-notification', {
+      body: {
+        userId,
+        propertyId,
+        amount,
+        buyerEmail,
+        propertyTitle,
+        sellerEmail,
+        adminEmail: 'sohamvaghasia004@gmail.com' // Admin email address
+      }
+    });
+    
+    if (error) {
+      console.error('Error sending payment notification email:', error);
+      return { success: false, error };
+    }
+    
+    console.log('Payment notification email sent successfully');
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending payment notification:', error);
+    return { success: false, error };
+  }
+};
+
 // Process payment and store in Supabase or localStorage
 export const processPayment = async (userId: string, propertyId: string, amount: number) => {
   try {
@@ -95,10 +133,88 @@ export const processPayment = async (userId: string, propertyId: string, amount:
           return { success: true, local: true };
         } else {
           console.log('Payment saved with original ID:', originalData);
+          
+          // After successful payment, fetch buyer email
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', userId)
+            .single();
+          
+          // Fetch property details and seller info
+          const { data: propertyData } = await supabase
+            .from('properties')
+            .select('title, user_id')
+            .eq('id', propertyId)
+            .single();
+            
+          // Fetch seller email if property data exists
+          let sellerEmail = 'unknown';
+          if (propertyData) {
+            const { data: sellerData } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', propertyData.user_id)
+              .single();
+              
+            if (sellerData) {
+              sellerEmail = sellerData.email;
+            }
+          }
+          
+          // Send email notification
+          await sendPaymentNotificationEmail(
+            userId,
+            propertyId,
+            amount,
+            userData?.email || 'unknown',
+            propertyData?.title || 'Unknown Property',
+            sellerEmail
+          );
+          
           return { success: true, data: originalData };
         }
       } else {
         console.log('Payment saved with formatted ID:', data);
+        
+        // After successful payment, fetch buyer email
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
+        
+        // Fetch property details and seller info
+        const { data: propertyData } = await supabase
+          .from('properties')
+          .select('title, user_id')
+          .eq('id', propertyId)
+          .single();
+          
+        // Fetch seller email if property data exists
+        let sellerEmail = 'unknown';
+        if (propertyData) {
+          const { data: sellerData } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', propertyData.user_id)
+            .single();
+            
+          if (sellerData) {
+            sellerEmail = sellerData.email;
+          }
+        }
+        
+        // Send email notification
+        await sendPaymentNotificationEmail(
+          userId,
+          propertyId,
+          amount,
+          userData?.email || 'unknown',
+          propertyData?.title || 'Unknown Property',
+          sellerEmail
+        );
+        
         return { success: true, data };
       }
     } catch (dbError) {
