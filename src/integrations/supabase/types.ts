@@ -149,39 +149,6 @@ export type Database = {
         }
         Relationships: []
       }
-      Property: {
-        Row: {
-          area: string | null
-          bathroom: string | null
-          bedroom: string | null
-          city: string | null
-          id: number
-          price: string | null
-          title: string | null
-          user: string | null
-        }
-        Insert: {
-          area?: string | null
-          bathroom?: string | null
-          bedroom?: string | null
-          city?: string | null
-          id?: number
-          price?: string | null
-          title?: string | null
-          user?: string | null
-        }
-        Update: {
-          area?: string | null
-          bathroom?: string | null
-          bedroom?: string | null
-          city?: string | null
-          id?: number
-          price?: string | null
-          title?: string | null
-          user?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never

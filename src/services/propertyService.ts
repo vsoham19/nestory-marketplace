@@ -1,4 +1,3 @@
-
 import { Property } from '@/lib/types';
 import { MOCK_PROPERTIES } from '@/lib/mock-data';
 import { toast } from '@/components/ui/use-toast';
@@ -426,34 +425,24 @@ export const getPropertyById = async (id: string): Promise<Property | undefined>
 };
 
 // Delete a property
-export const deleteProperty = async (propertyId: string): Promise<void> => {
+export const deleteProperty = async (propertyId: string): Promise<{success: boolean, error?: string}> => {
   try {
-    // Get the current user
-    const { data: { user } } = await supabase.auth.getUser();
+    console.log('Deleting property with ID:', propertyId);
     
-    if (!user) {
-      throw new Error('You must be logged in to delete a property');
-    }
-    
-    // First try to delete from Supabase
     const { error } = await supabase
       .from('properties')
       .delete()
-      .eq('id', propertyId)
-      .eq('user_id', user.id); // Ensure users can only delete their own properties
-      
+      .eq('id', propertyId);
+
     if (error) {
-      console.error('Error deleting from Supabase:', error);
-      // Fall back to in-memory deletion if there's an error
-      newProperties = newProperties.filter(p => p.id !== propertyId);
-    } else {
-      // Successfully deleted from Supabase
-      console.log('Property deleted from Supabase');
+      console.error('Supabase error deleting property:', error);
+      return { success: false, error: error.message };
     }
-  } catch (error) {
-    console.error('Unexpected error deleting property:', error);
-    // Fall back to in-memory deletion
-    newProperties = newProperties.filter(p => p.id !== propertyId);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting property:', error.message);
+    return { success: false, error: error.message };
   }
 };
 

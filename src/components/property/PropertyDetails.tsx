@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bed, Bath, Maximize, Calendar, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,7 +26,8 @@ const PropertyMap = ({ address, city, state, zipCode }: {
   state: string; 
   zipCode: string; 
 }) => {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  // Use the environment variable for the API key
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: apiKey

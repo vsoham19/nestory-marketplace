@@ -61,15 +61,17 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
       
       // If property was not found in database, use the numeric ID format
       let targetPropertyId = propertyId;
+      let finalPropertyTitle = propertyTitle;
       
       if (propertyError || !propertyData) {
         console.log('Property not found in database with provided ID, using numeric ID format');
       } else {
         console.log('Property found in database:', propertyData);
         targetPropertyId = propertyData.id;
+        finalPropertyTitle = propertyData.title || propertyTitle;
       }
       
-      const result = await processPayment(user.id, targetPropertyId, amount);
+      const result = await processPayment(user.id, targetPropertyId, amount, finalPropertyTitle);
       
       if (result.success) {
         setIsLoading(false);
@@ -78,7 +80,7 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
         
         toast({
           title: "Payment Successful",
-          description: "Payment processed. You now have access to the seller's contact details. An email notification has been sent to the administrator.",
+          description: "Payment processed. You now have access to the seller's contact details. An email notification has been sent to you and the administrator.",
         });
         
         // Call the onPaymentSuccess callback if provided

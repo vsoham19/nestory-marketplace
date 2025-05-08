@@ -71,18 +71,24 @@ const Profile = () => {
 
   const handleDeleteProperty = async (propertyId: string) => {
     try {
-      await deleteProperty(propertyId);
-      // Update the local state to remove the deleted property
-      setProperties(properties.filter(prop => prop.id !== propertyId));
-      toast({
-        title: "Property Deleted",
-        description: "Your property has been successfully deleted",
-      });
+      const result = await deleteProperty(propertyId);
+      
+      if (result.success) {
+        // Update the local state to remove the deleted property
+        setProperties(properties.filter(prop => prop.id !== propertyId));
+        
+        toast({
+          title: "Property Deleted",
+          description: "Your property has been successfully deleted",
+        });
+      } else {
+        throw new Error(result.error || "Failed to delete the property");
+      }
     } catch (error) {
       console.error('Failed to delete property:', error);
       toast({
         title: "Error",
-        description: "Failed to delete the property",
+        description: "Failed to delete the property. Please try again.",
         variant: "destructive",
       });
     }
@@ -186,7 +192,7 @@ const Profile = () => {
                     {properties.map((property) => (
                       <TableRow key={property.id}>
                         <TableCell className="font-medium">{property.title}</TableCell>
-                        <TableCell>${property.price.toLocaleString()}</TableCell>
+                        <TableCell>₹{property.price.toLocaleString()}</TableCell>
                         <TableCell>{property.published ? 'Published' : 'Draft'}</TableCell>
                         <TableCell className="text-right">
                           <AlertDialog>
