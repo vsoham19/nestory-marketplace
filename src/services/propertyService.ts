@@ -429,14 +429,43 @@ export const deleteProperty = async (propertyId: string): Promise<{success: bool
   try {
     console.log('Deleting property with ID:', propertyId);
     
-    const { error } = await supabase
+    // First try with the original ID
+    let { error } = await supabase
       .from('properties')
       .delete()
       .eq('id', propertyId);
 
     if (error) {
-      console.error('Supabase error deleting property:', error);
-      return { success: false, error: error.message };
+      console.error('Error deleting property with original ID:', error);
+      
+      // Try with formatted ID
+      const formattedId = formatPropertyIdToUuid(propertyId);
+      console.log('Trying to delete with formatted ID:', formattedId);
+      
+      const { error: formattedError } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', formattedId);
+        
+      if (formattedError) {
+        console.error('Error deleting property with formatted ID:', formattedError);
+        return { success: false, error: formattedError.message };
+      }
+    }
+
+    // Also clean up related data - delete any favorites for this property
+    try {
+      const { error: favError } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('property_id', propertyId);
+        
+      if (favError) {
+        console.error('Error cleaning up favorites:', favError);
+        // Don't fail the operation if this cleanup fails
+      }
+    } catch (cleanupError) {
+      console.error('Error during favorites cleanup:', cleanupError);
     }
 
     return { success: true };

@@ -1,4 +1,6 @@
+
 // Utility functions for payment processing
+import { supabase } from '@/lib/supabase';
 
 // Convert numeric propertyId to valid UUID format
 export const formatPropertyIdToUuid = (propertyId: string): string => {
@@ -66,7 +68,6 @@ export const sendPaymentNotificationEmail = async (
   sellerEmail: string
 ) => {
   try {
-    const { supabase } = await import('@/lib/supabase');
     console.log('Sending payment notification email to admin');
     
     const adminEmail = 'sohamvaghasia004@gmail.com';
@@ -215,7 +216,7 @@ export const processPayment = async (
 };
 
 // Helper function to gather and send email notification with all details
-const sendConfirmationEmailWithDetails = async (supabase: any, userId: string, propertyId: string, amount: number) => {
+const sendConfirmationEmailWithDetails = async (userId: string, propertyId: string, amount: number) => {
   try {
     // After successful payment, fetch buyer email
     const { data: userData } = await supabase

@@ -24,6 +24,7 @@ const Profile = () => {
   const [phone, setPhone] = useState('');
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Redirect to auth page if not authenticated
@@ -71,6 +72,7 @@ const Profile = () => {
 
   const handleDeleteProperty = async (propertyId: string) => {
     try {
+      setIsDeleting(true);
       const result = await deleteProperty(propertyId);
       
       if (result.success) {
@@ -91,6 +93,8 @@ const Profile = () => {
         description: "Failed to delete the property. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -197,7 +201,7 @@ const Profile = () => {
                         <TableCell className="text-right">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
+                              <Button variant="destructive" size="sm" disabled={isDeleting}>
                                 <Trash2 className="mr-1 h-4 w-4" />
                                 Remove
                               </Button>
@@ -206,13 +210,16 @@ const Profile = () => {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete your property.
+                                  This action cannot be undone. This will permanently delete your property "{property.title}".
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteProperty(property.id)}>
-                                  Delete
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteProperty(property.id)}
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? 'Deleting...' : 'Delete'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

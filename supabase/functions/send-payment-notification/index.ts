@@ -76,6 +76,29 @@ serve(async (req) => {
       <p>Best regards,<br>Estate Finder India Team</p>
     `;
     
+    // Format the seller email content
+    const sellerEmailSubject = `Property Payment Received - Estate Finder`;
+    const sellerEmailContent = `
+      <h1>Property Payment Received</h1>
+      <p>Dear Property Owner,</p>
+      
+      <p>A payment has been received for your property on Estate Finder India.</p>
+      
+      <h2>Payment Details:</h2>
+      <ul>
+        <li><strong>Amount:</strong> ₹${amount}</li>
+        <li><strong>Property:</strong> ${propertyTitle}</li>
+        <li><strong>Date:</strong> ${new Date().toLocaleString()}</li>
+        <li><strong>Buyer Email:</strong> ${buyerEmail}</li>
+      </ul>
+      
+      <p>The buyer now has access to your contact information and may contact you regarding the property.</p>
+      
+      <p>If you have any questions, please contact our support team.</p>
+      
+      <p>Best regards,<br>Estate Finder India Team</p>
+    `;
+    
     // Simulate email sending for demonstration - in production replace with actual email API call
     console.log("Admin email notification would be sent with:", {
       to: adminEmail,
@@ -90,12 +113,20 @@ serve(async (req) => {
       html: buyerEmailContent
     });
     
+    // Simulate sending email to the seller
+    console.log("Seller email notification would be sent with:", {
+      to: sellerEmail,
+      subject: sellerEmailSubject,
+      html: sellerEmailContent
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Notification emails sent to admin and buyer",
+        message: "Notification emails sent to admin, buyer, and seller",
         adminEmailSent: true,
         buyerEmailSent: true,
+        sellerEmailSent: true,
         timestamp: new Date().toISOString()
       }),
       {
