@@ -9,7 +9,7 @@ import PaymentModal from '@/components/PaymentModal';
 import { Developer } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { formatPropertyIdToUuid } from '@/utils/paymentUtils';
+import { formatPropertyIdToUuid, PAYMENTS_STORAGE_KEY } from '@/utils/paymentUtils';
 
 interface ContactAgentProps {
   developer: Developer;
@@ -21,6 +21,9 @@ const ContactAgent = ({ developer, propertyTitle, propertyId }: ContactAgentProp
   const [hasPaid, setHasPaid] = useState<boolean>(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState<boolean>(true);
   
+  // Log property information for debugging
+  console.log(`ContactAgent - Property ID: ${propertyId}, Property Title: ${propertyTitle}`);
+  
   useEffect(() => {
     const checkPaymentStatus = async () => {
       setIsCheckingPayment(true);
@@ -29,52 +32,63 @@ const ContactAgent = ({ developer, propertyTitle, propertyId }: ContactAgentProp
         // Check if user is logged in
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
+          console.log('User not logged in, cannot check payment status');
           setIsCheckingPayment(false);
           return;
         }
         
-        // First try with formatted UUID
-        const formattedId = formatPropertyIdToUuid(propertyId);
+        console.log('Checking payment status for property:', propertyId, 'and user:', session.user.id);
         
-        // Check if payment exists in Supabase
-        const { data: paymentsWithFormatted } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('property_id', formattedId)
-          .eq('status', 'completed');
+        // Check all possible ID formats
+        const propertyIdFormats = [
+          propertyId, // Original ID
+          formatPropertyIdToUuid(propertyId), // Formatted UUID
+        ];
         
-        // If payment found with formatted ID
-        if (paymentsWithFormatted && paymentsWithFormatted.length > 0) {
-          setHasPaid(true);
-          setIsCheckingPayment(false);
-          return;
+        let paymentFound = false;
+        
+        // Try each ID format
+        for (const idFormat of propertyIdFormats) {
+          console.log('Checking payment with ID format:', idFormat);
+          
+          // Check if payment exists in Supabase
+          const { data: payments, error } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('property_id', idFormat)
+            .eq('status', 'completed');
+          
+          if (error) {
+            console.error('Error checking payment status with ID format:', idFormat, error);
+            continue;
+          }
+          
+          // If payment found with this ID format
+          if (payments && payments.length > 0) {
+            console.log('Payment found in database with ID format:', idFormat);
+            paymentFound = true;
+            break;
+          }
         }
         
-        // Try with original ID if formatted ID doesn't work
-        const { data: paymentsWithOriginal } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('property_id', propertyId)
-          .eq('status', 'completed');
-        
-        // If payment found with original ID
-        if (paymentsWithOriginal && paymentsWithOriginal.length > 0) {
-          setHasPaid(true);
-          setIsCheckingPayment(false);
-          return;
+        // If not found in database, check local storage as fallback
+        if (!paymentFound) {
+          console.log('Payment not found in database, checking local storage');
+          
+          const localPayments = JSON.parse(localStorage.getItem(PAYMENTS_STORAGE_KEY) || '[]');
+          paymentFound = localPayments.some(
+            (p: any) => p.user_id === session.user.id && 
+                        (p.property_id === propertyId || p.property_id === formatPropertyIdToUuid(propertyId)) && 
+                        p.status === 'completed'
+          );
+          
+          if (paymentFound) {
+            console.log('Payment found in local storage');
+          }
         }
         
-        // Check local storage as fallback
-        const localPayments = JSON.parse(localStorage.getItem('realEstate_payments') || '[]');
-        const hasLocalPayment = localPayments.some(
-          (p: any) => p.user_id === session.user.id && p.property_id === propertyId && p.status === 'completed'
-        );
-        
-        if (hasLocalPayment) {
-          setHasPaid(true);
-        }
+        setHasPaid(paymentFound);
       } catch (error) {
         console.error('Error checking payment status:', error);
       } finally {
@@ -109,7 +123,13 @@ const ContactAgent = ({ developer, propertyTitle, propertyId }: ContactAgentProp
       
       <Separator className="mb-4" />
       
-      {hasPaid ? (
+      {isCheckingPayment ? (
+        <div className="flex justify-center py-4">
+          <div className="animate-pulse text-center">
+            <p className="text-sm text-muted-foreground">Checking payment status...</p>
+          </div>
+        </div>
+      ) : hasPaid ? (
         <div className="space-y-4 mb-6">
           <div className="flex items-center gap-2 text-sm">
             <Phone size={16} className="text-muted-foreground" />

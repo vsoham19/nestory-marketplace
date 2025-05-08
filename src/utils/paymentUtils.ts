@@ -7,18 +7,23 @@ export const formatPropertyIdToUuid = (propertyId: string): string => {
     // If it already looks like a valid UUID with hyphens, return as is
     if (propertyId.includes('-') && 
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId)) {
+      console.log(`Property ID is already a valid UUID: ${propertyId}`);
       return propertyId;
     }
     
     // For properties that might already be UUIDs but without hyphens
     if (propertyId.length === 32) {
-      return `${propertyId.substring(0, 8)}-${propertyId.substring(8, 12)}-${propertyId.substring(12, 16)}-${propertyId.substring(16, 20)}-${propertyId.substring(20)}`;
+      const formattedUuid = `${propertyId.substring(0, 8)}-${propertyId.substring(8, 12)}-${propertyId.substring(12, 16)}-${propertyId.substring(16, 20)}-${propertyId.substring(20)}`;
+      console.log(`Formatted ID from 32-char string: ${formattedUuid}`);
+      return formattedUuid;
     }
     
     // For numeric IDs or other formats, create a proper UUID format with prefix
     // Format: ffffffff-ffff-ffff-ffff-xxxxxxxxxxxx where x is the padded ID
     const paddedId = propertyId.padStart(12, '0');
-    return `ffffffff-ffff-ffff-ffff-${paddedId}`;
+    const formattedUuid = `ffffffff-ffff-ffff-ffff-${paddedId}`;
+    console.log(`Formatted numeric ID to UUID: ${formattedUuid}`);
+    return formattedUuid;
   } catch (error) {
     console.error('Error formatting property ID to UUID:', error);
     return propertyId; // Return original in case of any error
@@ -96,29 +101,22 @@ export const sendPaymentNotificationEmail = async (
 export const processPayment = async (userId: string, propertyId: string, amount: number) => {
   try {
     const { supabase } = await import('@/lib/supabase');
-    console.log(`Processing payment for property: ${propertyId}`);
+    console.log(`Processing payment for property: ${propertyId} (Original ID format)`);
     
     // Try to store payment record in Supabase
     try {
-      // First try with formatted UUID
-      const validPropertyId = formatPropertyIdToUuid(propertyId);
-      console.log(`Attempting to save payment with formatted ID: ${validPropertyId}`);
+      // First, check if the property is in the database with original ID
+      const { data: propertyExists } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('id', propertyId)
+        .maybeSingle();
       
-      const { data, error } = await supabase
-        .from('payments')
-        .insert({
-          user_id: userId,
-          property_id: validPropertyId,
-          amount: amount,
-          status: 'completed'
-        })
-        .select();
-      
-      if (error) {
-        console.log('Error with formatted ID, trying with original:', error);
+      if (propertyExists) {
+        console.log(`Property exists with original ID: ${propertyId}`);
         
-        // If there's an error with formatted ID, try with original ID
-        const { data: originalData, error: originalError } = await supabase
+        // Use original property ID since it exists
+        const { data, error } = await supabase
           .from('payments')
           .insert({
             user_id: userId,
@@ -127,106 +125,205 @@ export const processPayment = async (userId: string, propertyId: string, amount:
             status: 'completed'
           })
           .select();
+        
+        if (error) {
+          throw error;
+        }
+        
+        console.log('Payment saved with original ID:', data);
+        
+        // Fetch user and property information for email
+        await sendConfirmationEmailWithDetails(supabase, userId, propertyId, amount);
+        
+        return { success: true, data };
+      }
+      
+      // If original ID didn't work, try with formatted UUID
+      const formattedId = formatPropertyIdToUuid(propertyId);
+      console.log(`Attempting to save payment with formatted ID: ${formattedId}`);
+      
+      // Try to find property with formatted ID
+      const { data: formattedPropertyExists } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('id', formattedId)
+        .maybeSingle();
+        
+      if (formattedPropertyExists) {
+        console.log(`Property exists with formatted ID: ${formattedId}`);
+        
+        // Use formatted ID since it exists
+        const { data, error } = await supabase
+          .from('payments')
+          .insert({
+            user_id: userId,
+            property_id: formattedId,
+            amount: amount,
+            status: 'completed'
+          })
+          .select();
+        
+        if (error) {
+          throw error;
+        }
+        
+        console.log('Payment saved with formatted ID:', data);
+        
+        // Fetch user and property information for email
+        await sendConfirmationEmailWithDetails(supabase, userId, formattedId, amount);
+        
+        return { success: true, data };
+      }
+      
+      // If still no success, save directly with original ID
+      console.log('Property not found in database, attempting direct insertion with original ID');
+      const { data, error } = await supabase
+        .from('payments')
+        .insert({
+          user_id: userId,
+          property_id: propertyId,
+          amount: amount,
+          status: 'completed'
+        })
+        .select();
+      
+      if (error) {
+        // Last attempt with formatted ID direct insertion
+        console.log('Attempting direct insertion with formatted ID as fallback');
+        const { data: formattedData, error: formattedError } = await supabase
+          .from('payments')
+          .insert({
+            user_id: userId,
+            property_id: formattedId,
+            amount: amount,
+            status: 'completed'
+          })
+          .select();
           
-        if (originalError) {
-          // If both approaches fail, fall back to local storage
-          console.log('Falling back to local storage for payment:', originalError);
+        if (formattedError) {
+          console.error('All database attempts failed, falling back to local storage', formattedError);
           savePaymentLocally(userId, propertyId, amount);
-          return { success: true, local: true };
-        } else {
-          console.log('Payment saved with original ID:', originalData);
           
-          // After successful payment, fetch buyer email
+          // Send an email notification anyway
           const { data: userData } = await supabase
             .from('profiles')
             .select('email')
             .eq('id', userId)
             .single();
-          
-          // Fetch property details and seller info
-          const { data: propertyData } = await supabase
-            .from('properties')
-            .select('title, user_id')
-            .eq('id', propertyId)
-            .single();
             
-          // Fetch seller email if property data exists
-          let sellerEmail = 'unknown';
-          if (propertyData) {
-            const { data: sellerData } = await supabase
-              .from('profiles')
-              .select('email')
-              .eq('id', propertyData.user_id)
-              .single();
-              
-            if (sellerData) {
-              sellerEmail = sellerData.email;
-            }
-          }
-          
-          // Send email notification
           await sendPaymentNotificationEmail(
             userId,
             propertyId,
             amount,
             userData?.email || 'unknown',
-            propertyData?.title || 'Unknown Property',
-            sellerEmail
+            'Unknown Property (Local Storage)',
+            'unknown'
           );
           
-          return { success: true, data: originalData };
+          return { success: true, local: true };
+        } else {
+          console.log('Payment saved with formatted ID (direct insertion):', formattedData);
+          
+          // Fetch user and property information for email
+          await sendConfirmationEmailWithDetails(supabase, userId, formattedId, amount);
+          
+          return { success: true, data: formattedData };
         }
       } else {
-        console.log('Payment saved with formatted ID:', data);
+        console.log('Payment saved with original ID (direct insertion):', data);
         
-        // After successful payment, fetch buyer email
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', userId)
-          .single();
-        
-        // Fetch property details and seller info
-        const { data: propertyData } = await supabase
-          .from('properties')
-          .select('title, user_id')
-          .eq('id', validPropertyId)
-          .single();
-          
-        // Fetch seller email if property data exists
-        let sellerEmail = 'unknown';
-        if (propertyData) {
-          const { data: sellerData } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', propertyData.user_id)
-            .single();
-            
-          if (sellerData) {
-            sellerEmail = sellerData.email;
-          }
-        }
-        
-        // Send email notification
-        await sendPaymentNotificationEmail(
-          userId,
-          validPropertyId,
-          amount,
-          userData?.email || 'unknown',
-          propertyData?.title || 'Unknown Property',
-          sellerEmail
-        );
+        // Fetch user and property information for email
+        await sendConfirmationEmailWithDetails(supabase, userId, propertyId, amount);
         
         return { success: true, data };
       }
     } catch (dbError) {
       // In case of any database error, fallback to local storage
-      console.log('Database error, using local storage fallback:', dbError);
+      console.error('Database error, using local storage fallback:', dbError);
       savePaymentLocally(userId, propertyId, amount);
+      
+      // Try to send email notification anyway
+      try {
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
+          
+        await sendPaymentNotificationEmail(
+          userId,
+          propertyId,
+          amount,
+          userData?.email || 'unknown',
+          'Unknown Property (Local Storage Fallback)',
+          'unknown'
+        );
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+      }
+      
       return { success: true, local: true };
     }
   } catch (error: any) {
     console.error('Payment error:', error);
     return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Helper function to gather and send email notification with all details
+const sendConfirmationEmailWithDetails = async (supabase: any, userId: string, propertyId: string, amount: number) => {
+  try {
+    // After successful payment, fetch buyer email
+    const { data: userData } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+      
+    // Fetch property details and seller info
+    const { data: propertyData } = await supabase
+      .from('properties')
+      .select('title, user_id')
+      .eq('id', propertyId)
+      .maybeSingle();
+      
+    // Default values if data is not available
+    const buyerEmail = userData?.email || 'unknown@example.com';
+    const propertyTitle = propertyData?.title || 'Unknown Property';
+    let sellerEmail = 'unknown@example.com';
+    
+    // Fetch seller email if property data exists
+    if (propertyData && propertyData.user_id) {
+      const { data: sellerData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', propertyData.user_id)
+        .single();
+        
+      if (sellerData && sellerData.email) {
+        sellerEmail = sellerData.email;
+      }
+    }
+    
+    console.log('Email notification parameters:', {
+      userId,
+      propertyId,
+      amount,
+      buyerEmail,
+      propertyTitle,
+      sellerEmail
+    });
+    
+    // Send email notification
+    await sendPaymentNotificationEmail(
+      userId,
+      propertyId,
+      amount,
+      buyerEmail,
+      propertyTitle,
+      sellerEmail
+    );
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
   }
 };

@@ -15,6 +15,7 @@ import { processPayment } from '@/utils/paymentUtils';
 import PaymentForm from '@/components/payment/PaymentForm';
 import SellerContactInfo from '@/components/payment/SellerContactInfo';
 import { Toaster } from '@/components/ui/toaster';
+import { supabase } from '@/lib/supabase';
 
 interface PaymentModalProps {
   propertyTitle: string;
@@ -27,6 +28,9 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
   const [showContact, setShowContact] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  
+  // Log property information to help debug
+  console.log(`Payment Modal - Property ID: ${propertyId}, Property Title: ${propertyTitle}`);
   
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +48,33 @@ const PaymentModal = ({ propertyTitle, propertyId, onPaymentSuccess }: PaymentMo
     
     try {
       const amount = 3000;
-      console.log(`Processing payment for property ID: ${propertyId}, User ID: ${user.id}`);
-      const result = await processPayment(user.id, propertyId, amount);
+      
+      // Log payment attempt for debugging
+      console.log(`Processing payment for Property ID: ${propertyId}, User ID: ${user.id}`);
+      
+      // Check if property exists in database before payment processing
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .select('id, title, user_id')
+        .eq('id', propertyId)
+        .maybeSingle();
+      
+      // If property was not found in database, use the numeric ID format
+      let targetPropertyId = propertyId;
+      
+      if (propertyError || !propertyData) {
+        console.log('Property not found in database with provided ID, using numeric ID format');
+      } else {
+        console.log('Property found in database:', propertyData);
+        targetPropertyId = propertyData.id;
+      }
+      
+      const result = await processPayment(user.id, targetPropertyId, amount);
       
       if (result.success) {
         setIsLoading(false);
         setShowContact(true);
+        setIsOpen(true); // Keep the dialog open to show contact info
         
         toast({
           title: "Payment Successful",

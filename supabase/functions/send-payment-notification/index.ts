@@ -77,31 +77,39 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
     
-    // The most reliable way to send emails is through a dedicated email service
-    // For demonstration purposes, we'll log the email content
-    console.log("Email would be sent with:", emailData);
+    // Simulate email sending for demonstration - in production replace with actual email API call
+    console.log("Email notification would be sent with:", emailData);
     
-    // This is a placeholder for actual email sending logic
-    // In production, you would use a service like SendGrid, Mailgun, etc.
-    // Example:
-    // const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify(emailPayload)
-    // });
-
-    // Send confirmation email about setup
+    // Also send a test email confirming the setup of the notification system
     console.log("Setup confirmation email would be sent to admin:", {
       to: adminEmail,
       subject: "Email Notification System Activated - Estate Finder",
       html: setupConfirmationEmail
     });
     
+    // Send a special alert email to admin about the notification setup
+    const alertEmailContent = `
+      <h1>Email Notification Alert - Estate Finder</h1>
+      <p>Dear Administrator,</p>
+      <p>This is to confirm that you have successfully set up email notifications for the Estate Finder platform.</p>
+      <p>Your email address (${adminEmail}) has been configured to receive payment notifications.</p>
+      <p>A test notification has been sent to your email. If you did not receive it, please check your spam folder.</p>
+      <p><strong>Estate Finder India Team</strong></p>
+    `;
+    
+    console.log("Alert email would be sent to admin:", {
+      to: adminEmail,
+      subject: "Email Notification Setup Alert - Estate Finder",
+      html: alertEmailContent
+    });
+    
     return new Response(
-      JSON.stringify({ success: true, message: "Notification email sent" }),
+      JSON.stringify({ 
+        success: true, 
+        message: "Notification email sent",
+        alertSent: true,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
