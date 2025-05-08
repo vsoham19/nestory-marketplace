@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -20,20 +21,19 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
       return;
     }
     
-    // Process and validate image URLs
-    const processedImages = images.filter(img => {
-      // Keep URLs that are not blob: or data: URLs as they don't persist after refresh
-      if (img.startsWith('blob:') || img.startsWith('data:')) {
-        return false;
-      }
-      
-      // Keep all other image URLs regardless of extension
-      return true;
-    });
+    // Filter out blob: and data: URLs which don't persist after refresh
+    const filteredImages = images.filter(img => 
+      !(img.startsWith('blob:') || img.startsWith('data:'))
+    );
     
-    const imageUrls = processedImages.length > 0 ? processedImages : ['/placeholder.svg'];
-    setValidImages(imageUrls);
-    setSelectedImage(imageUrls[0]);
+    if (filteredImages.length === 0) {
+      setValidImages(['/placeholder.svg']);
+      setSelectedImage('/placeholder.svg');
+      return;
+    }
+    
+    setValidImages(filteredImages);
+    setSelectedImage(filteredImages[0]);
   }, [images]);
   
   const handleImageClick = (image: string) => {
@@ -44,6 +44,17 @@ const PropertyGallery = ({ images, title }: PropertyGalleryProps) => {
     const target = e.target as HTMLImageElement;
     target.onerror = null;
     target.src = '/placeholder.svg';
+  };
+
+  // Helper to check if an image is a valid format
+  const isValidImageFormat = (url: string): boolean => {
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'];
+    const lowercasedUrl = url.toLowerCase();
+    
+    // Check if URL ends with one of the valid extensions
+    return validExtensions.some(ext => lowercasedUrl.endsWith(ext)) ||
+           // Or if it's an unsplash/external URL without extension
+           (/\.(com|net|org|io)\//.test(lowercasedUrl) && !lowercasedUrl.includes('placeholder.svg'));
   };
   
   return (

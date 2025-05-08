@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Bed, Bath, Maximize, ArrowRight } from 'lucide-react';
@@ -72,18 +73,20 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
       return '/placeholder.svg';
     }
     
-    const image = property.images[0];
-    
-    // Check if the image is a blob URL (which doesn't persist after refreshes)
-    if (image.startsWith('blob:') || image.startsWith('data:')) {
-      return '/placeholder.svg';
+    // Try each image until we find a valid one
+    for (const image of property.images) {
+      // Skip blob and data URLs as they don't persist after refreshes
+      if (image.startsWith('blob:') || image.startsWith('data:')) {
+        continue;
+      }
+      
+      // Return the first valid image URL
+      return image;
     }
     
-    return image;
+    // If no valid images found, return placeholder
+    return '/placeholder.svg';
   };
-
-  // Log the property image URL for debugging
-  console.log('Property image URL:', getPropertyImage());
 
   return (
     <Card 

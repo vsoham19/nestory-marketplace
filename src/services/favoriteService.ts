@@ -1,7 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { formatPropertyIdToUuid } from '@/utils/paymentUtils';
 
 // Store favorite in local storage as fallback
 const addToLocalFavorites = (userId: string, propertyId: string): void => {
@@ -46,7 +45,8 @@ const getLocalFavorites = (userId: string): string[] => {
   }
 };
 
-// Add property to favorites
+// Fix UUID type mismatch for property IDs
+// This issue stems from the favorites table expecting property_id to be UUID but it's defined as smallint
 export const addToFavorites = async (propertyId: string): Promise<boolean> => {
   try {
     // Check if user is authenticated
@@ -63,48 +63,20 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
     
     console.log(`Adding property to favorites: ${propertyId}`);
     
-    // Format the property ID to ensure UUID compatibility
-    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
-    console.log(`Formatted property ID: ${formattedPropertyId}`);
+    // Store directly in local storage first as a fallback
+    addToLocalFavorites(user.id, propertyId);
     
-    // Check if property is already favorited
-    const { data: existingFavorite, error: checkError } = await supabase
-      .from('favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('property_id', formattedPropertyId);
-      
-    if (checkError) {
-      console.error('Error checking favorites:', checkError);
-      toast({
-        title: "Error",
-        description: "Failed to check if property is already in favorites",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (existingFavorite && existingFavorite.length > 0) {
-      toast({
-        title: "Already favorited",
-        description: "This property is already in your favorites",
-      });
-      return true;
-    }
-    
-    // Add to favorites in the database
+    // Try to insert into database
+    // Note: We don't format the ID here since we're bypassing the type issue
     const { error } = await supabase
       .from('favorites')
       .insert({
         user_id: user.id,
-        property_id: formattedPropertyId
+        property_id: propertyId
       });
     
     if (error) {
       console.error('Error adding favorite to database:', error);
-      
-      // Fallback to local storage
-      addToLocalFavorites(user.id, propertyId);
       
       toast({
         title: "Note",
@@ -146,19 +118,15 @@ export const removeFromFavorites = async (propertyId: string): Promise<boolean> 
     
     console.log(`Removing property from favorites: ${propertyId}`);
     
-    // Format the property ID
-    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
-    console.log(`Formatted property ID: ${formattedPropertyId}`);
-    
     // Remove from local storage (do this regardless of database operation)
     removeFromLocalFavorites(user.id, propertyId);
     
-    // Remove from favorites in database
+    // Try to remove from database
     const { error } = await supabase
       .from('favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('property_id', formattedPropertyId);
+      .eq('property_id', propertyId);
     
     if (error) {
       console.error('Error removing favorite:', error);
@@ -191,15 +159,12 @@ export const isPropertyFavorited = async (propertyId: string): Promise<boolean> 
       return false;
     }
     
-    // Format the property ID
-    const formattedPropertyId = formatPropertyIdToUuid(propertyId);
-    
     // Check if property is favorited in database
     const { data, error } = await supabase
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('property_id', formattedPropertyId);
+      .eq('property_id', propertyId);
     
     if (error) {
       console.error('Error checking favorite status:', error);
@@ -245,7 +210,7 @@ export const getUserFavorites = async (): Promise<string[]> => {
     if (error) {
       console.error('Error fetching favorites from database:', error);
     } else {
-      favorites = data.map(fav => fav.property_id);
+      favorites = data.map(fav => String(fav.property_id));
       console.log('Favorites from database:', favorites);
     }
     
