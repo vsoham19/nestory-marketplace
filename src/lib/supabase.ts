@@ -1,9 +1,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Use the hardcoded values from src/integrations/supabase/client.ts since the env variables seem to be causing issues
-const supabaseUrl = "https://wixngvknbvjthbasfijk.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpeG5ndmtuYnZqdGhiYXNmaWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIxODIsImV4cCI6MjA1OTE5ODE4Mn0.BfK7Zn6adUbIeJNw1p2_iCCh-aex342SCbcgNluPPpc";
+// Use environment variables with fallbacks to hardcoded values for safety
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://wixngvknbvjthbasfijk.supabase.co";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpeG5ndmtuYnZqdGhiYXNmaWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjIxODIsImV4cCI6MjA1OTE5ODE4Mn0.BfK7Zn6adUbIeJNw1p2_iCCh-aex342SCbcgNluPPpc";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables. Please check your .env file or environment settings.');
@@ -11,7 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl,
-  supabaseAnonKey
+  supabaseAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storage: localStorage
+    }
+  }
 );
 
 // Type for Supabase tables

@@ -99,21 +99,19 @@ serve(async (req) => {
       <p>Best regards,<br>Estate Finder India Team</p>
     `;
     
-    // Simulate email sending for demonstration - in production replace with actual email API call
+    // In a real-world scenario, replace these console logs with actual email sending logic
     console.log("Admin email notification would be sent with:", {
       to: adminEmail,
       subject: adminEmailSubject,
       html: adminEmailContent
     });
     
-    // Simulate sending email to the buyer
     console.log("Buyer email notification would be sent with:", {
       to: buyerEmail,
       subject: buyerEmailSubject,
       html: buyerEmailContent
     });
     
-    // Simulate sending email to the seller
     console.log("Seller email notification would be sent with:", {
       to: sellerEmail,
       subject: sellerEmailSubject,
