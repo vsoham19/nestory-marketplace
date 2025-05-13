@@ -45,8 +45,6 @@ const getLocalFavorites = (userId: string): string[] => {
   }
 };
 
-// Fix UUID type mismatch for property IDs
-// This issue stems from the favorites table expecting property_id to be UUID but it's defined as smallint
 export const addToFavorites = async (propertyId: string): Promise<boolean> => {
   try {
     // Check if user is authenticated
@@ -67,7 +65,6 @@ export const addToFavorites = async (propertyId: string): Promise<boolean> => {
     addToLocalFavorites(user.id, propertyId);
     
     // Try to insert into database
-    // Note: We don't format the ID here since we're bypassing the type issue
     const { error } = await supabase
       .from('favorites')
       .insert({

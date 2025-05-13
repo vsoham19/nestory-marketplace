@@ -13,27 +13,35 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          property_id: number | null
+          property_id: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
-          property_id?: number | null
+          property_id?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
-          property_id?: number | null
+          property_id?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "favorites_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
           amount: number
-          created_at: string
+          created_at: string | null
           id: string
           property_id: string
           status: string
@@ -41,7 +49,7 @@ export type Database = {
         }
         Insert: {
           amount: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           property_id: string
           status: string
@@ -49,7 +57,7 @@ export type Database = {
         }
         Update: {
           amount?: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           property_id?: string
           status?: string
@@ -106,7 +114,9 @@ export type Database = {
           price: number
           published: boolean | null
           state: string | null
+          status: string | null
           title: string
+          type: string | null
           updated_at: string | null
           user_id: string | null
           zipcode: string | null
@@ -124,7 +134,9 @@ export type Database = {
           price: number
           published?: boolean | null
           state?: string | null
+          status?: string | null
           title: string
+          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           zipcode?: string | null
@@ -142,7 +154,9 @@ export type Database = {
           price?: number
           published?: boolean | null
           state?: string | null
+          status?: string | null
           title?: string
+          type?: string | null
           updated_at?: string | null
           user_id?: string | null
           zipcode?: string | null

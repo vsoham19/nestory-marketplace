@@ -43,6 +43,8 @@ export type Database = {
           updated_at: string | null;
           user_id: string | null;
           published: boolean | null;
+          type: string | null;
+          status: string | null;
         };
         Insert: {
           id?: string;
@@ -61,6 +63,8 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string | null;
           published?: boolean | null;
+          type?: string | null;
+          status?: string | null;
         };
         Update: {
           id?: string;
@@ -79,6 +83,8 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string | null;
           published?: boolean | null;
+          type?: string | null;
+          status?: string | null;
         };
       };
       favorites: {
@@ -108,7 +114,7 @@ export type Database = {
           property_id: string;
           amount: number;
           status: string;
-          created_at: string;
+          created_at: string | null;
         };
         Insert: {
           id?: string;
@@ -116,7 +122,7 @@ export type Database = {
           property_id: string;
           amount: number;
           status: string;
-          created_at?: string;
+          created_at?: string | null;
         };
         Update: {
           id?: string;
@@ -124,7 +130,7 @@ export type Database = {
           property_id?: string;
           amount?: number;
           status?: string;
-          created_at?: string;
+          created_at?: string | null;
         };
       };
       profiles: {
